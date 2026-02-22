@@ -34,7 +34,7 @@ class WhisperConfig(BaseModel):
 
 
 class OpenAIConfig(BaseModel):
-    chat_model: str = "gpt-4o-mini"
+    chat_model: str = "gpt-5.2"
     api_key: str
 
 

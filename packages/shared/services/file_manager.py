@@ -8,6 +8,8 @@ from shared.config import config
 
 class FileManager:
     _instance: "FileManager | None" = None
+    logger: logging.Logger
+    _knowledge_base_dir: Path
 
     def __new__(cls) -> "FileManager":
         if cls._instance is None:
@@ -20,6 +22,16 @@ class FileManager:
     def knowledge_base_dir(self) -> Path:
         """Get the knowledge base directory path."""
         return self._knowledge_base_dir
+    
+    def list_files(self) -> list[Path]:
+        """List all files in the knowledge base directory."""
+        if not self._knowledge_base_dir.exists():
+            self.logger.warning(
+                "Knowledge base directory does not exist: %s",
+                self._knowledge_base_dir,
+            )
+            return []
+        return list(self.iter_files())
 
     def iter_files(self) -> Iterator[Path]:
         if not self._knowledge_base_dir.exists():
@@ -27,7 +39,7 @@ class FileManager:
                 "Knowledge base directory does not exist: %s",
                 self._knowledge_base_dir,
             )
-            return
+            return iter([])  
 
         for path in self._knowledge_base_dir.iterdir():
             if path.is_file():

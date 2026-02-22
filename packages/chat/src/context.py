@@ -1,4 +1,4 @@
-from llm import llm
+from agent import agent
 from shared.services.file_manager import file_manager
 from shared.services.knowledge_storage import KnowledgeStorage
 from shared.services.embedder import embedder
@@ -14,7 +14,7 @@ class Context:
         self.storage = KnowledgeStorage()
 
     def get_chunks(self, question: str) -> list[str]:
-        search_query = llm.extract_search_query(question)
+        search_query = agent.extract_search_query(question)
         if not search_query:
             return []
 

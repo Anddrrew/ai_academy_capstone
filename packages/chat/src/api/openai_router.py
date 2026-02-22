@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 import uuid
@@ -6,11 +7,16 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from context import context
+from agents import Runner
+from openai.types.responses import (
+    ResponseTextDeltaEvent,
+    ResponseReasoningSummaryTextDeltaEvent,
+    ResponseReasoningSummaryPartAddedEvent,
+    ResponseReasoningSummaryPartDoneEvent,
+)
+
 from shared.config import config
-from shared.services.embedder import embedder
-from shared.services.file_manager import file_manager
-from llm import llm
+from agent import rag_agent
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -42,22 +48,63 @@ def list_models():
     }
 
 
+def _make_sse_chunk(completion_id: str, model: str, delta: dict, finish_reason: str | None = None) -> str:
+    chunk = {
+        "id": completion_id,
+        "object": "chat.completion.chunk",
+        "created": int(time.time()),
+        "model": model,
+        "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+    }
+    return f"data: {json.dumps(chunk)}\n\n"
+
+
+async def _stream_chat(messages: list[dict], model: str):
+    """Stream agent output as Chat Completions SSE with <think> tags for reasoning."""
+    completion_id = f"chatcmpl-{uuid.uuid4().hex}"
+    yield _make_sse_chunk(completion_id, model, {"role": "assistant"})
+
+    result = Runner.run_streamed(rag_agent, input=messages)
+
+    async for event in result.stream_events():
+        if event.type == "raw_response_event":
+            data = event.data
+            if isinstance(data, ResponseReasoningSummaryPartAddedEvent):
+                yield _make_sse_chunk(completion_id, model, {"content": "<think>\n"})
+            elif isinstance(data, ResponseReasoningSummaryTextDeltaEvent):
+                yield _make_sse_chunk(completion_id, model, {"content": data.delta})
+            elif isinstance(data, ResponseReasoningSummaryPartDoneEvent):
+                yield _make_sse_chunk(completion_id, model, {"content": "\n</think>\n\n"})
+            elif isinstance(data, ResponseTextDeltaEvent):
+                yield _make_sse_chunk(completion_id, model, {"content": data.delta})
+        elif event.type == "run_item_stream_event":
+            if event.item.type == "tool_call_item":
+                raw = getattr(event.item, "raw_item", None)
+                tool_name = getattr(raw, "name", "tool") if raw else "tool"
+                yield _make_sse_chunk(completion_id, model, {
+                    "content": f"🔧 *Calling {tool_name}...*\n\n"
+                })
+
+    yield _make_sse_chunk(completion_id, model, {}, finish_reason="stop")
+    yield "data: [DONE]\n\n"
+
+
 @router.post("/v1/chat/completions")
 async def chat_completions(request: OpenAIChatRequest):
-    last_message = request.messages[-1].content if request.messages else ""
-    context_chunks = context.get_chunks(last_message)
     messages = [m.model_dump() for m in request.messages]
 
     if request.stream:
         return StreamingResponse(
-            llm.stream(messages, context_chunks),
+            _stream_chat(messages, request.model),
             media_type="text/event-stream",
         )
 
-    answer = llm.chat_messages(messages, context_chunks)
-    completion_id = f"chatcmpl-{uuid.uuid4().hex}"
+    # Non-streaming: run agent loop
+    result = await Runner.run(rag_agent, input=messages)
+    answer = result.final_output
+
     return {
-        "id": completion_id,
+        "id": f"chatcmpl-{uuid.uuid4().hex}",
         "object": "chat.completion",
         "created": int(time.time()),
         "model": request.model,
