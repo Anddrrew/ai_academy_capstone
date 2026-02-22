@@ -1,11 +1,8 @@
 import hashlib
-import logging
 import time
 from typing import TypedDict
 
-from qdrant_client import QdrantClient
 from qdrant_client.models import (
-    Distance,
     FieldCondition,
     Filter,
     MatchValue,
@@ -14,10 +11,10 @@ from qdrant_client.models import (
     PointIdsList,
     PointStruct,
     ScoredPoint,
-    VectorParams,
 )
 
-from shared.config import config
+from shared.services.base_storage import BaseStorage
+
 
 class MemoryRecord(TypedDict):
     id: int
@@ -25,24 +22,8 @@ class MemoryRecord(TypedDict):
     created_at: int | None
 
 
-COLLECTION_NAME = "user_memory"
-VECTOR_SIZE = config.embedding.vector_size
-
-
-class MemoryStorage:
-    def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self._client = QdrantClient(host=config.qdrant.host, port=config.qdrant.port)
-        self._ensure_collection()
-
-    def _ensure_collection(self) -> None:
-        if self._client.collection_exists(collection_name=COLLECTION_NAME):
-            return
-        self._client.create_collection(
-            collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
-        )
-        self.logger.info("Created collection '%s'", COLLECTION_NAME)
+class MemoryStorage(BaseStorage):
+    collection_name = "user_memory"
 
     @staticmethod
     def _make_id(user_id: str, text: str) -> int:
@@ -56,7 +37,7 @@ class MemoryStorage:
     def save(self, user_id: str, text: str, vector: list[float]) -> int:
         point_id = self._make_id(user_id, text)
         self._client.upsert(
-            collection_name=COLLECTION_NAME,
+            collection_name=self.collection_name,
             points=[
                 PointStruct(
                     id=point_id,
@@ -69,7 +50,7 @@ class MemoryStorage:
 
     def search(self, user_id: str, vector: list[float], k: int = 5) -> list[ScoredPoint]:
         result = self._client.query_points(
-            collection_name=COLLECTION_NAME,
+            collection_name=self.collection_name,
             query=vector,
             query_filter=self._user_filter(user_id),
             limit=k,
@@ -78,7 +59,7 @@ class MemoryStorage:
 
     def list_all(self, user_id: str) -> list[MemoryRecord]:
         result = self._client.scroll(
-            collection_name=COLLECTION_NAME,
+            collection_name=self.collection_name,
             scroll_filter=self._user_filter(user_id),
             order_by=OrderBy(key="created_at", direction=Direction.DESC),
             limit=100,
@@ -95,7 +76,7 @@ class MemoryStorage:
 
     def delete(self, point_id: int) -> None:
         self._client.delete(
-            collection_name=COLLECTION_NAME,
+            collection_name=self.collection_name,
             points_selector=PointIdsList(points=[point_id]),
         )
 

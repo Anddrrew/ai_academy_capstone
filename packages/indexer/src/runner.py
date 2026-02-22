@@ -26,6 +26,9 @@ class IndexingStatus(str, Enum):
 
 class IndexerRunner:
     _instance: "IndexerRunner | None" = None
+    _knowledge_storage: KnowledgeStorage
+    logger: logging.Logger
+    _stop_event: threading.Event
 
     def __new__(cls) -> "IndexerRunner":
         if cls._instance is None:

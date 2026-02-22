@@ -6,7 +6,7 @@ from agents import RunContextWrapper, function_tool
 from shared.services.embedder import embedder
 from shared.services.file_manager import file_manager
 from shared.services.knowledge_storage import KnowledgeStorage
-from shared.services.memory_storage import memory_storage
+from researcher.storage import memory_storage
 from context import UserContext
 
 logger = logging.getLogger(__name__)

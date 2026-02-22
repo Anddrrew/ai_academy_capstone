@@ -18,7 +18,7 @@ from openai.types.responses import (
 
 from shared.config import config
 from shared.services.embedder import embedder
-from shared.services.evaluation_storage import evaluation_storage
+from judge.storage import evaluation_storage
 from researcher import researcher_agent
 from judge import judge_agent
 from context import UserContext
@@ -73,7 +73,6 @@ class OpenAIChatRequest(BaseModel):
     model: str
     messages: list[Message]
     stream: bool = False
-    user: str | None = None
 
 
 @router.get("/v1/models")
