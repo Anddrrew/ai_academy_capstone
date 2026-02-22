@@ -3,7 +3,7 @@ import logging
 import time
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -17,6 +17,7 @@ from openai.types.responses import (
 
 from shared.config import config
 from agent import rag_agent
+from tools import UserContext
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -31,6 +32,7 @@ class OpenAIChatRequest(BaseModel):
     model: str
     messages: list[Message]
     stream: bool = False
+    user: str | None = None
 
 
 @router.get("/v1/models")
@@ -59,12 +61,12 @@ def _make_sse_chunk(completion_id: str, model: str, delta: dict, finish_reason: 
     return f"data: {json.dumps(chunk)}\n\n"
 
 
-async def _stream_chat(messages: list[dict], model: str):
+async def _stream_chat(messages: list[dict], model: str, user_ctx: UserContext):
     """Stream agent output as Chat Completions SSE with <think> tags for reasoning."""
     completion_id = f"chatcmpl-{uuid.uuid4().hex}"
     yield _make_sse_chunk(completion_id, model, {"role": "assistant"})
 
-    result = Runner.run_streamed(rag_agent, input=messages)
+    result = Runner.run_streamed(rag_agent, input=messages, context=user_ctx)
 
     async for event in result.stream_events():
         if event.type == "raw_response_event":
@@ -90,17 +92,17 @@ async def _stream_chat(messages: list[dict], model: str):
 
 
 @router.post("/v1/chat/completions")
-async def chat_completions(request: OpenAIChatRequest):
+async def chat_completions(request: OpenAIChatRequest, user_ctx: UserContext = Depends(UserContext)):
     messages = [m.model_dump() for m in request.messages]
 
     if request.stream:
         return StreamingResponse(
-            _stream_chat(messages, request.model),
+            _stream_chat(messages, request.model, user_ctx),
             media_type="text/event-stream",
         )
 
     # Non-streaming: run agent loop
-    result = await Runner.run(rag_agent, input=messages)
+    result = await Runner.run(rag_agent, input=messages, context=user_ctx)
     answer = result.final_output
 
     return {
