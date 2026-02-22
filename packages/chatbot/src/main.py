@@ -1,7 +1,10 @@
+import logging
+
+from agents import set_default_openai_key
+
 from api.openai_router import router as openai_router
 from api.router import router
 from shared.services.file_manager import file_manager
-import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +18,8 @@ logging.basicConfig(
     level=config.server.log_level,
     handlers=[RichHandler(rich_tracebacks=True)],
 )
+
+set_default_openai_key(config.openai.api_key)
 
 
 app = FastAPI(title="RAG Chat", description="RAG-based chatbot")

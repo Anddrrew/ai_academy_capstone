@@ -1,8 +1,9 @@
-from agents import Agent, ModelSettings, WebSearchTool, set_default_openai_key
+from agents import Agent, ModelSettings, WebSearchTool
 from openai.types.shared import Reasoning
 
 from shared.config import config
-from tools import (
+from researcher.prompt import SYSTEM
+from researcher.tools import (
     search_knowledge_base,
     list_documents,
     search_memories,
@@ -10,13 +11,10 @@ from tools import (
     list_memories,
     delete_memory,
 )
-import prompts
 
-set_default_openai_key(config.openai.api_key)
-
-rag_agent = Agent(
-    name="RAG Assistant",
-    instructions=prompts.system(),
+researcher_agent = Agent(
+    name="Researcher",
+    instructions=SYSTEM,
     model=config.openai.chat_model,
     tools=[
         search_knowledge_base,

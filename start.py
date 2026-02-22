@@ -45,9 +45,9 @@ SERVICES = [
     {
         "app": "main:app",
         "port": 3001,
-        "name": "chat",
+        "name": "chatbot",
         "pythonpath": [
-            os.path.join(ROOT, "packages", "chat", "src"),
+            os.path.join(ROOT, "packages", "chatbot", "src"),
             os.path.join(ROOT, "packages"),
         ],
         "wait_for": "embedder",
