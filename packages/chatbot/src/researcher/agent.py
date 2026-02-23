@@ -1,4 +1,5 @@
 from agents import Agent, ModelSettings, WebSearchTool
+from agents.mcp import MCPServerSse
 from openai.types.shared import Reasoning
 
 from shared.config import config
@@ -10,6 +11,12 @@ from researcher.tools import (
     save_memory,
     list_memories,
     delete_memory,
+)
+
+indexer_mcp = MCPServerSse(
+    params={"url": "http://localhost:3002/mcp/sse"},
+    name="Indexer",
+    cache_tools_list=True,
 )
 
 researcher_agent = Agent(
@@ -25,6 +32,7 @@ researcher_agent = Agent(
         delete_memory,
         WebSearchTool(),
     ],
+    mcp_servers=[indexer_mcp],
     model_settings=ModelSettings(
         reasoning=Reasoning(effort="medium", summary="auto"),
     ),

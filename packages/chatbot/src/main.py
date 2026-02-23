@@ -1,9 +1,11 @@
 import logging
+from contextlib import asynccontextmanager
 
 from agents import set_default_openai_key
 
 from api.openai_router import router as openai_router
 from api.router import router
+from researcher.agent import indexer_mcp
 from shared.services.file_manager import file_manager
 
 from fastapi import FastAPI
@@ -22,7 +24,13 @@ logging.basicConfig(
 set_default_openai_key(config.openai.api_key)
 
 
-app = FastAPI(title="RAG Chat", description="RAG-based chatbot")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with indexer_mcp:
+        yield
+
+
+app = FastAPI(title="RAG Chat", description="RAG-based chatbot", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
