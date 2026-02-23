@@ -21,6 +21,7 @@ class EmbeddingConfig(BaseModel):
 
 class IndexerConfig(BaseModel):
     start_on_startup: bool = True
+    poll_interval: int = 10
 
 
 class ChunkingConfig(BaseModel):
