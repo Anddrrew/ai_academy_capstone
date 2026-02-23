@@ -50,7 +50,7 @@ SERVICES = [
             os.path.join(ROOT, "packages", "chatbot", "src"),
             os.path.join(ROOT, "packages"),
         ],
-        "wait_for": "embedder",
+        "wait_for": ["embedder", "indexer"],
         "health_url": "http://localhost:3001/status",
     },
 ]
@@ -88,7 +88,10 @@ def run_service(service: dict, statuses: dict):
     sys.stdout = log_file
     sys.stderr = log_file
 
-    if dependency := service.get("wait_for"):
+    dependencies = service.get("wait_for", [])
+    if isinstance(dependencies, str):
+        dependencies = [dependencies]
+    for dependency in dependencies:
         wait_for_service(dependency, service["name"], statuses)
 
     for p in service["pythonpath"]:
