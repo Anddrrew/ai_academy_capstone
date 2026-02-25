@@ -45,6 +45,14 @@ class FileManager:
             if path.is_file():
                 yield path
 
+    def save_file(self, filename: str, data: bytes) -> Path:
+        """Save bytes to knowledge_base/{filename}."""
+        self._knowledge_base_dir.mkdir(parents=True, exist_ok=True)
+        path = self._knowledge_base_dir / filename
+        path.write_bytes(data)
+        self.logger.info("Saved file: %s (%d bytes)", filename, len(data))
+        return path
+
     def get_file_path(self, filename: str) -> Path:
         return self._knowledge_base_dir / filename
 

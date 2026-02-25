@@ -12,7 +12,6 @@ DB_PATH = Path(__file__).parent.parent.parent.parent / "index_store.db"
 
 class FileType(str, Enum):
     FILE = "file"
-    GITHUB = "github"
 
 
 class Status(str, Enum):
@@ -23,7 +22,7 @@ class Status(str, Enum):
 
 
 class Priority(int, Enum):
-    HIGH = 1   # user-triggered (github repos)
+    HIGH = 1   # user-triggered (uploads)
     DEFAULT = 2  # observer (files from knowledge_base/)
 
 

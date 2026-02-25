@@ -16,6 +16,7 @@ pypdf
 faster-whisper
 mcp
 
+
 # chat
 openai
 openai-agents

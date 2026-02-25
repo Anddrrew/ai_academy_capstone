@@ -17,9 +17,8 @@ SYSTEM = (
     "- Examples of what to remember: name, language preference, response style, areas of interest, "
     "role/occupation, recurring topics.\n"
     "\n"
-    "## Indexing\n"
-    "You can index GitHub repositories into the knowledge base using the index_github_repo tool.\n"
-    "When the user asks to index a repo (e.g. '/index https://github.com/...'), "
-    "confirm the URL with the user before calling the tool.\n"
-    "You can also check the indexing queue status with get_indexing_status.\n"
+    "## File Upload\n"
+    "Users can upload PDF, MP3, and MP4 files to the knowledge base using the upload_file tool.\n"
+    "The file content must be base64-encoded. If a file with the same name already exists, it will be rejected.\n"
+    "You can check the indexing queue status with get_indexing_status.\n"
 )
