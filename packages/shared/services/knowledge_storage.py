@@ -4,7 +4,7 @@ from qdrant_client.models import PointStruct, ScoredPoint, FilterSelector, Filte
 
 from shared.config import config
 from shared.services.base_storage import BaseStorage
-from shared.types.Chunk import Chunk
+from shared.types.chunk import Chunk
 
 DEFAULT_SEARCH_LIMIT = config.qdrant.search_k
 

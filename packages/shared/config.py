@@ -22,6 +22,7 @@ class EmbeddingConfig(BaseModel):
 class IndexerConfig(BaseModel):
     start_on_startup: bool = True
     poll_interval: int = 10
+    mcp_url: str = "http://localhost:3002/mcp/sse"
 
 
 class ChunkingConfig(BaseModel):
@@ -36,6 +37,7 @@ class WhisperConfig(BaseModel):
 
 class OpenAIConfig(BaseModel):
     chat_model: str = "gpt-5.2"
+    judge_model: str = "gpt-4o-mini"
     api_key: str
 
 

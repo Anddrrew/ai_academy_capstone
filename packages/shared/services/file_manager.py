@@ -7,16 +7,9 @@ from shared.config import config
 
 
 class FileManager:
-    _instance: "FileManager | None" = None
-    logger: logging.Logger
-    _knowledge_base_dir: Path
-
-    def __new__(cls) -> "FileManager":
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance.logger = logging.getLogger(cls.__name__)
-            cls._instance._knowledge_base_dir = Path(__file__).parent.parent.parent.parent / "knowledge_base"
-        return cls._instance
+    def __init__(self) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self._knowledge_base_dir = Path(__file__).parent.parent.parent.parent / "knowledge_base"
 
     @property
     def knowledge_base_dir(self) -> Path:

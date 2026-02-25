@@ -2,7 +2,7 @@ import logging
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from shared.types.Chunk import Chunk
+from shared.types.chunk import Chunk
 from shared.config import config
 
 

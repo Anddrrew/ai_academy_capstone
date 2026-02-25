@@ -4,9 +4,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import BaseModel, Field
+from rich.logging import RichHandler
 from shared.config import config
 
-logging.basicConfig(level="INFO")
+logging.basicConfig(
+    level="INFO",
+    handlers=[RichHandler(rich_tracebacks=True)],
+)
 
 MODEL_NAME = config.embedding.model_name
 
@@ -17,7 +21,7 @@ model: HuggingFaceEmbeddings | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global model
-    logger.info(f"Loading model {MODEL_NAME}...")
+    logger.info("Loading model %s...", MODEL_NAME)
     model = HuggingFaceEmbeddings(model_name=MODEL_NAME, show_progress=True)
     logger.info("Model loaded.")
     yield

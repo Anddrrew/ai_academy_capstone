@@ -14,7 +14,7 @@ from researcher.tools import (
 )
 
 indexer_mcp = MCPServerSse(
-    params={"url": "http://localhost:3002/mcp/sse"},
+    params={"url": config.indexer.mcp_url},
     name="Indexer",
     cache_tools_list=True,
 )
