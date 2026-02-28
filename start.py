@@ -26,7 +26,7 @@ SERVICES = [
         "port": 3003,
         "name": "embedder",
         "pythonpath": [
-            os.path.join(ROOT, "packages", "embedder", "src"),
+            os.path.join(ROOT, "packages", "embedder"),
             os.path.join(ROOT, "packages"),
         ],
         "health_url": "http://localhost:3003/status",
@@ -34,30 +34,20 @@ SERVICES = [
     {
         "app": "main:app",
         "port": 3002,
-        "name": "indexer",
+        "name": "knowledge_base",
         "pythonpath": [
-            os.path.join(ROOT, "packages", "indexer", "src"),
+            os.path.join(ROOT, "packages", "knowledge_base"),
             os.path.join(ROOT, "packages"),
         ],
         "wait_for": "embedder",
         "health_url": "http://localhost:3002/status",
-    },
-    {
-        "app": "main:app",
-        "port": 3001,
-        "name": "chatbot",
-        "pythonpath": [
-            os.path.join(ROOT, "packages", "chatbot", "src"),
-            os.path.join(ROOT, "packages"),
-        ],
-        "wait_for": ["embedder", "indexer"],
-        "health_url": "http://localhost:3001/status",
-    },
+    }
 ]
 
 DOCKER_SERVICES = [
-    {"name": "WebUI", "port": 3000, "url": "http://localhost:3000", "health_url": "http://localhost:3000/health"},
     {"name": "Qdrant", "port": 6333, "url": "http://localhost:6333/dashboard", "health_url": "http://localhost:6333/healthz"},
+    {"name": "Chatbot", "port": 3000, "url": "http://localhost:3001", "health_url": "http://localhost:3001"},
+    {"name": "Devtools", "port": 4983, "url": "http://localhost:4983", "health_url": "http://localhost:4983"},
 ]
 
 

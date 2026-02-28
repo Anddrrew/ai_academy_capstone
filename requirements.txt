@@ -9,14 +9,10 @@ qdrant-client
 langchain-huggingface
 sentence_transformers
 
-# indexer
+# knowledge_base
 langchain-text-splitters
 langchain-community
 pypdf
 faster-whisper
 mcp
 
-
-# chat
-openai
-openai-agents

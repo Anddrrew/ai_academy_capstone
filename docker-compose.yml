@@ -14,18 +14,45 @@ services:
       timeout: 3s
       retries: 10
 
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
+  chatbot:
+    build:
+      context: ./packages/chatbot
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: sh -c "npm run dev -- --hostname 0.0.0.0 --port 3000 2>&1 | tee /workspace_logs/chatbot.log"
     ports:
-      - "3000:8080"
-    environment:
-      - OPENAI_API_BASE_URL=http://host.docker.internal:3001/v1/
-      - WEBUI_AUTH=false
-      - HF_HUB_OFFLINE=1
-      - OFFLINE_MODE=true
+      - "3001:3000"
     volumes:
-      - open_webui:/app/backend/data
+      - ./packages/chatbot:/app
+      - ./logs:/workspace_logs
+      - /app/node_modules
+      - /app/.next
+    environment:
+      OPENAI_API_KEY: ${OPENAI__API_KEY}
+      KNOWLEDGE_BASE_MCP_URL: http://host.docker.internal:3002/mcp/sse
+      QDRANT_URL: http://qdrant:6333
+      EMBEDDER_URL: http://host.docker.internal:3003/embed
+      EMBEDDING_VECTOR_SIZE: ${EMBEDDING__VECTOR_SIZE}
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  chatbot-devtools:
+    build:
+      context: ./packages/chatbot
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: npx @ai-sdk/devtools
+    ports:
+      - "4983:4983"
+    depends_on:
+      - chatbot
 
 volumes:
   qdrant:
-  open_webui:

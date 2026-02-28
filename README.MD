@@ -31,7 +31,7 @@ python start.py
 tail -f logs/*.log
 
 # Follow specific service
-tail -f logs/indexer.log
+tail -f logs/knowledge_base.log
 ```
 
 ## Stop
