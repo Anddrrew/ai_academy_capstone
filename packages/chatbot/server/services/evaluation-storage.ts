@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import { QdrantClient } from "@qdrant/qdrant-js";
 
@@ -26,7 +26,6 @@ type SaveEvaluationInput = {
 export class EvaluationStorage {
   private static instance: EvaluationStorage | null = null;
   private readonly qdrant: QdrantClient;
-  private collectionEnsured = false;
   private readonly collectionName = qdrantCollections.evaluation;
 
   private constructor() {
@@ -41,11 +40,7 @@ export class EvaluationStorage {
   }
 
   private async ensureCollection(): Promise<void> {
-    if (this.collectionEnsured) {
-      return;
-    }
-
-    const exists = await this.qdrant.collectionExists(this.collectionName);
+    const { exists } = await this.qdrant.collectionExists(this.collectionName);
     if (!exists) {
       await this.qdrant.createCollection(this.collectionName, {
         vectors: {
@@ -54,8 +49,6 @@ export class EvaluationStorage {
         },
       });
     }
-
-    this.collectionEnsured = true;
   }
 
   async save({
@@ -63,15 +56,9 @@ export class EvaluationStorage {
     userQuestion,
     assistantAnswer,
     evaluation,
-  }: SaveEvaluationInput): Promise<string> {
+  }: SaveEvaluationInput) {
     await this.ensureCollection();
-
     const createdAt = Math.floor(Date.now() / 1000);
-    const fingerprint = `${userId}:${userQuestion}:${assistantAnswer}:${evaluation.score}:${evaluation.feedback}`;
-    const id = createHash("sha256")
-      .update(fingerprint)
-      .digest("hex")
-      .slice(0, 16);
     const vector = await embedderService.embedQuery(
       [userQuestion, assistantAnswer, evaluation.feedback].join("\n"),
     );
@@ -80,21 +67,19 @@ export class EvaluationStorage {
       wait: true,
       points: [
         {
-          id,
+          id: randomUUID(),
           vector,
           payload: {
-            user_id: userId,
-            user_question: userQuestion,
-            assistant_answer: assistantAnswer,
+            userId,
+            userQuestion,
+            assistantAnswer,
             score: evaluation.score,
             feedback: evaluation.feedback,
-            created_at: createdAt,
+            createdAt,
           },
         },
       ],
     });
-
-    return id;
   }
 }
 

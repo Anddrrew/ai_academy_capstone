@@ -8,13 +8,12 @@ import { embedderService } from "@/server/services/embedder";
 export type MemoryRecord = {
   id: string;
   text: string;
-  createAt: number;
+  createdAt: number;
 };
 
 export class MemoryStorage {
   private static instance: MemoryStorage | null = null;
   private readonly qdrant: QdrantClient;
-  private collectionEnsured = false;
   private readonly collectionName = qdrantCollections.memory;
 
   private constructor() {
@@ -29,11 +28,7 @@ export class MemoryStorage {
   }
 
   private async ensureCollection(): Promise<void> {
-    if (this.collectionEnsured) {
-      return;
-    }
-
-    const exists = await this.qdrant.collectionExists(this.collectionName);
+    const { exists } = await this.qdrant.collectionExists(this.collectionName);
     if (!exists) {
       await this.qdrant.createCollection(this.collectionName, {
         vectors: {
@@ -42,9 +37,8 @@ export class MemoryStorage {
         },
       });
     }
-
-    this.collectionEnsured = true;
   }
+
   private userFilter(userId: string) {
     return {
       must: [
@@ -110,7 +104,7 @@ export class MemoryStorage {
     const data = await this.qdrant.scroll(this.collectionName, {
       filter: this.userFilter(userId),
       order_by: {
-        key: "createAt",
+        key: "createdAt",
         direction: "desc",
       },
       with_payload: true,
@@ -120,7 +114,7 @@ export class MemoryStorage {
     return data.points.map((point) => ({
       id: String(point.id),
       text: String(point.payload?.text ?? ""),
-      createAt: Number(point.payload?.createdAt ?? 0),
+      createdAt: Number(point.payload?.createdAt ?? 0),
     }));
   }
 
