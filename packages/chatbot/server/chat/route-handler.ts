@@ -38,6 +38,8 @@ export async function POST(req: Request) {
 
   const userId = body.data.userId;
   const messages = body.data.messages as UIMessage[];
+
+  console.log(JSON.stringify({ userId, messages }, null, 2));
   const mainAgent = await createMainAgent(userId);
   const lastUserMessage = [...messages]
     .reverse()
@@ -58,17 +60,11 @@ export async function POST(req: Request) {
         const userQuestion = extractTextFromMessage(lastUserMessage);
         const assistantAnswer = extractTextFromMessage(responseMessage);
 
-        const evaluationId = await evaluationStorage.save({
+        await evaluationStorage.save({
           userId,
           userQuestion,
           assistantAnswer,
           evaluation,
-        });
-
-        console.info("Judge evaluation:", {
-          evaluationId,
-          userId,
-          score: evaluation.score,
         });
       } catch (error) {
         console.error("Judge evaluation failed:", error);

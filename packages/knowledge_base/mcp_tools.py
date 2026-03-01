@@ -1,5 +1,8 @@
-import base64
+import ipaddress
+import socket
+from urllib.parse import urljoin, urlparse
 
+import httpx
 from mcp import types
 from mcp.server import Server
 from pydantic import BaseModel
@@ -14,11 +17,14 @@ mcp_server = Server("knowledge_base")
 knowledge_storage = KnowledgeStorage()
 
 ALLOWED_EXTENSIONS = ", ".join(SUPPORTED_EXTENSIONS)
+MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024
+MAX_REDIRECTS = 5
+DOWNLOAD_TIMEOUT_SECONDS = 30.0
 
 
-class UploadFileArgs(BaseModel):
+class UploadFileFromUrlArgs(BaseModel):
     filename: str
-    content: str
+    file_url: str
 
 
 class IndexingStatusArgs(BaseModel):
@@ -54,13 +60,81 @@ class SearchKnowledgeBaseResult(BaseModel):
     results: list[SearchKnowledgeBaseHit]
 
 
+def _file_ext(filename: str) -> str:
+    return "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+
+def _is_blocked_ip(raw_ip: str) -> bool:
+    ip = ipaddress.ip_address(raw_ip)
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    )
+
+
+def _validate_public_url(file_url: str) -> str:
+    parsed = urlparse(file_url)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError("Only http/https URLs are allowed.")
+
+    if not parsed.hostname:
+        raise ValueError("URL must include a hostname.")
+
+    try:
+        addr_info = socket.getaddrinfo(parsed.hostname, parsed.port or 80, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise ValueError(f"Unable to resolve URL hostname: {exc}") from exc
+
+    for info in addr_info:
+        sockaddr = info[4]
+        ip = sockaddr[0]
+        if _is_blocked_ip(ip):
+            raise ValueError("URL points to a blocked/private network address.")
+
+    return file_url
+
+
+def _download_url_file(file_url: str) -> bytes:
+    current_url = file_url
+    for _ in range(MAX_REDIRECTS):
+        _validate_public_url(current_url)
+        with httpx.stream(
+            "GET",
+            current_url,
+            follow_redirects=False,
+            timeout=DOWNLOAD_TIMEOUT_SECONDS,
+        ) as response:
+            if 300 <= response.status_code < 400 and response.headers.get("location"):
+                current_url = urljoin(current_url, response.headers["location"])
+                continue
+
+            response.raise_for_status()
+            data = bytearray()
+            for chunk in response.iter_bytes():
+                data.extend(chunk)
+                if len(data) > MAX_DOWNLOAD_BYTES:
+                    raise ValueError(
+                        f"File is too large. Max allowed size is {MAX_DOWNLOAD_BYTES // (1024 * 1024)}MB."
+                    )
+            return bytes(data)
+
+    raise ValueError("Too many redirects while downloading file.")
+
+
 @mcp_server.list_tools()
 async def list_tools() -> list[types.Tool]:
     return [
         types.Tool(
-            name="upload_file",
-            description=f"Upload a file to the knowledge base for indexing. Supported formats: {ALLOWED_EXTENSIONS}. Content must be base64-encoded.",
-            inputSchema=UploadFileArgs.model_json_schema(),
+            name="upload_file_from_url",
+            description=(
+                f"Download and upload a file to the knowledge base by public URL. "
+                f"Supported formats: {ALLOWED_EXTENSIONS}."
+            ),
+            inputSchema=UploadFileFromUrlArgs.model_json_schema(),
             outputSchema=UploadFileResult.model_json_schema(),
         ),
         types.Tool(
@@ -84,10 +158,21 @@ async def call_tool(
     raw_args: dict,
 ) -> types.CallToolResult:
 
-    if name == "upload_file":
-        args = UploadFileArgs.model_validate(raw_args)
-        ext = "." + args.filename.rsplit(".", 1)[-1].lower() if "." in args.filename else ""
+    if name == "upload_file_from_url":
+        args = UploadFileFromUrlArgs.model_validate(raw_args)
+        try:
+            filename = file_manager.normalize_filename(args.filename)
+            _validate_public_url(args.file_url)
+        except ValueError as exc:
+            message = str(exc)
+            payload = UploadFileResult(message=message, status="error")
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=message)],
+                structuredContent=payload.model_dump(),
+                isError=True,
+            )
 
+        ext = _file_ext(filename)
         if ext not in SUPPORTED_EXTENSIONS:
             message = f"Unsupported file type '{ext}'. Allowed: {ALLOWED_EXTENSIONS}"
             payload = UploadFileResult(message=message, status="error")
@@ -97,8 +182,8 @@ async def call_tool(
                 isError=True,
             )
 
-        if file_manager.get_file_path(args.filename).exists():
-            message = f"File '{args.filename}' already exists in the knowledge base."
+        if file_manager.get_file_path(filename).exists():
+            message = f"File '{filename}' already exists in the knowledge base."
             payload = UploadFileResult(message=message, status="error")
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=message)],
@@ -106,10 +191,29 @@ async def call_tool(
                 isError=True,
             )
 
-        data = base64.b64decode(args.content)
-        file_manager.save_file(args.filename, data)
-        store.add(FileType.FILE, args.filename, Priority.HIGH)
-        message = f"Saved and queued '{args.filename}' for indexing."
+        try:
+            data = _download_url_file(args.file_url)
+        except (ValueError, httpx.HTTPError) as exc:
+            message = f"Failed to download file: {exc}"
+            payload = UploadFileResult(message=message, status="error")
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=message)],
+                structuredContent=payload.model_dump(),
+                isError=True,
+            )
+
+        try:
+            file_manager.save_file(filename, data)
+        except FileExistsError as exc:
+            message = str(exc)
+            payload = UploadFileResult(message=message, status="error")
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=message)],
+                structuredContent=payload.model_dump(),
+                isError=True,
+            )
+        store.add(FileType.FILE, filename, Priority.HIGH)
+        message = f"Downloaded, saved, and queued '{filename}' for indexing."
         payload = UploadFileResult(message=message, status="queued")
         return types.CallToolResult(
             content=[types.TextContent(type="text", text=message)],

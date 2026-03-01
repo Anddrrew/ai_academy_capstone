@@ -1,9 +1,9 @@
 import { MCPClient } from "@ai-sdk/mcp";
 import { z } from "zod";
 
-const uploadFileInputSchema = z.object({
+const uploadFileFromUrlInputSchema = z.object({
   filename: z.string(),
-  content: z.string(), // base64
+  file_url: z.string().url(),
 });
 
 const uploadFileOutputSchema = z.object({
@@ -38,8 +38,8 @@ const searchKnowledgeBaseOutputSchema = z.object({
 });
 
 export const knowledgeBaseMcpToolSchemas = {
-  upload_file: {
-    inputSchema: uploadFileInputSchema,
+  upload_file_from_url: {
+    inputSchema: uploadFileFromUrlInputSchema,
     outputSchema: uploadFileOutputSchema,
   },
   get_indexing_status: {

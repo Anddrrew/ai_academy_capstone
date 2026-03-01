@@ -16,7 +16,8 @@ export const MAIN_AGENT_SYSTEM_PROMPT = [
   "- Examples of what to remember: name, language preference, response style, areas of interest, role/occupation, recurring topics.",
   "",
   "## File Upload",
-  "Users can upload PDF, MP3, and MP4 files to the knowledge base using the upload_file tool.",
-  "The file content must be base64-encoded. If a file with the same name already exists, it will be rejected.",
+  "Prefer upload_file_from_url for file uploads.",
+  "Ask the user for two fields only: a public file URL and a filename (with .pdf, .mp3, or .mp4 extension), then call upload_file_from_url.",
+  "If a file with the same name already exists, the upload will be rejected.",
   "You can check the indexing queue status with get_indexing_status.",
 ].join("\n");
