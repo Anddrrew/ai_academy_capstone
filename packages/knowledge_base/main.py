@@ -7,8 +7,8 @@ from rich.logging import RichHandler
 from starlette.responses import FileResponse, PlainTextResponse, Response
 from mcp.server.sse import SseServerTransport
 
-from packages.knowledge_base.indexer.worker import worker
-from packages.knowledge_base.indexer.store import Status
+from indexer.worker import worker
+from indexer.store import Status
 from mcp_tools import mcp_server
 from services.file_manager import file_manager
 

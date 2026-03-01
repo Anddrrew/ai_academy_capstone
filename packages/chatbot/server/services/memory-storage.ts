@@ -49,7 +49,7 @@ export class MemoryStorage {
     return {
       must: [
         {
-          key: "user_id",
+          key: "userId",
           match: { value: userId },
         },
       ],
@@ -71,8 +71,8 @@ export class MemoryStorage {
           id,
           vector,
           payload: {
-            user_id: userId,
-            created_at: Math.floor(Date.now() / 1000),
+            userId,
+            createdAt: Math.floor(Date.now() / 1000),
             text,
           },
         },
@@ -120,7 +120,7 @@ export class MemoryStorage {
     return data.points.map((point) => ({
       id: String(point.id),
       text: String(point.payload?.text ?? ""),
-      createAt: Number(point.payload?.created_at ?? 0),
+      createAt: Number(point.payload?.createdAt ?? 0),
     }));
   }
 

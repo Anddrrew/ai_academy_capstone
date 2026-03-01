@@ -20,13 +20,6 @@ class FileManager:
         return self._knowledge_base_dir
 
     def list_files(self) -> list[Path]:
-        """List all files in the knowledge base directory."""
-        if not self._knowledge_base_dir.exists():
-            self.logger.warning(
-                "Knowledge base directory does not exist: %s",
-                self._knowledge_base_dir,
-            )
-            return []
         return list(self.iter_files())
 
     def iter_files(self) -> Iterator[Path]:
@@ -35,7 +28,7 @@ class FileManager:
                 "Knowledge base directory does not exist: %s",
                 self._knowledge_base_dir,
             )
-            return iter([])
+            return
 
         for path in self._knowledge_base_dir.iterdir():
             if path.is_file():

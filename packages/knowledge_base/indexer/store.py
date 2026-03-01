@@ -7,7 +7,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = Path(__file__).parent.parent.parent.parent.parent / "knowledge_base_store.db"
+DB_PATH = Path(__file__).parent.parent.parent.parent / "knowledge_base_store.db"
 
 
 class FileType(str, Enum):
