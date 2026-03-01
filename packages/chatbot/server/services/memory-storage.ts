@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 import { QdrantClient } from "@qdrant/qdrant-js";
 
@@ -53,10 +53,7 @@ export class MemoryStorage {
   async save(userId: string, text: string) {
     await this.ensureCollection();
     const vector = await embedderService.embedQuery(text);
-    const id = createHash("sha256")
-      .update(`${userId}:${text}`)
-      .digest("hex")
-      .slice(0, 16);
+    const id = randomUUID();
 
     await this.qdrant.upsert(this.collectionName, {
       wait: true,

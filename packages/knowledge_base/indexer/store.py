@@ -136,6 +136,15 @@ class IndexStore:
         ).fetchall()
         return [self._to_record(r) for r in rows]
 
+    def reset(self) -> int:
+        """Delete all records and return deleted count."""
+        with self._lock:
+            cursor = self._db.execute("DELETE FROM index_items")
+            self._db.commit()
+            deleted = int(cursor.rowcount or 0)
+            self._has_work.clear()
+            return deleted
+
     def _count_idle(self) -> int:
         return self._db.execute("SELECT COUNT(*) FROM index_items WHERE status = 'idle'").fetchone()[0]
 

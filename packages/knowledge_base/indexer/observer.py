@@ -21,10 +21,10 @@ class Observer:
 
     def _run(self) -> None:
         while True:
-            self._scan()
+            self.scan()
             time.sleep(config.knowledge_base.poll_interval)
 
-    def _scan(self) -> None:
+    def scan(self) -> None:
         for file_path in file_manager.iter_files():
             if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
                 continue

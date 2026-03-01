@@ -29,6 +29,10 @@ class StatusResponse(BaseModel):
     indexed_sources: list[str] = []
 
 
+class ReindexResponse(BaseModel):
+    message: str
+
+
 @app.get("/status", response_model=StatusResponse)
 def status() -> StatusResponse:
     idle = worker.store.get_by_status(Status.IDLE)
@@ -48,6 +52,14 @@ def files_catalog() -> PlainTextResponse:
         return PlainTextResponse("No files uploaded yet.\n")
     links = [f"/files/{quote(path.name)}" for path in files]
     return PlainTextResponse("\n".join(links) + "\n")
+
+
+@app.post("/reindex", response_model=ReindexResponse)
+def reindex() -> ReindexResponse:
+    worker.force_reindex()
+    return ReindexResponse(
+        message="Reindex forced and restarted.",
+    )
 
 
 @app.get("/files/{filename:path}")
