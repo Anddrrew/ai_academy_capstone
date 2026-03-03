@@ -22,7 +22,6 @@ const indexingStatusOutputSchema = z.object({
 
 const searchKnowledgeBaseInputSchema = z.object({
   query: z.string(),
-  k: z.number().int().positive().optional(),
 });
 
 const searchKnowledgeBaseHitSchema = z.object({

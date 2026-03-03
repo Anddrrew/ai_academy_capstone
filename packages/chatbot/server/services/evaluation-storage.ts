@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 import { QdrantClient } from "@qdrant/qdrant-js";
 
@@ -10,16 +10,20 @@ export type EvaluationRecord = {
   id: string;
   userId: string;
   userQuestion: string;
-  assistantAnswer: string;
+  assistantTrace: string;
+  availableTools: string[];
   score: EvaluationFeedback["score"];
   feedback: string;
+  criteria: EvaluationFeedback["criteria"];
+  issues: EvaluationFeedback["issues"];
   createdAt: number;
 };
 
 type SaveEvaluationInput = {
   userId: string;
   userQuestion: string;
-  assistantAnswer: string;
+  assistantTrace: string;
+  availableTools: string[];
   evaluation: EvaluationFeedback;
 };
 
@@ -54,13 +58,14 @@ export class EvaluationStorage {
   async save({
     userId,
     userQuestion,
-    assistantAnswer,
+    assistantTrace,
+    availableTools,
     evaluation,
   }: SaveEvaluationInput) {
     await this.ensureCollection();
     const createdAt = Math.floor(Date.now() / 1000);
     const vector = await embedderService.embedQuery(
-      [userQuestion, assistantAnswer, evaluation.feedback].join("\n"),
+      [userQuestion, assistantTrace, evaluation.feedback].join("\n"),
     );
 
     await this.qdrant.upsert(this.collectionName, {
@@ -72,9 +77,12 @@ export class EvaluationStorage {
           payload: {
             userId,
             userQuestion,
-            assistantAnswer,
+            assistantTrace,
+            availableTools,
             score: evaluation.score,
             feedback: evaluation.feedback,
+            criteria: evaluation.criteria,
+            issues: evaluation.issues,
             createdAt,
           },
         },

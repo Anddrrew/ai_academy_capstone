@@ -3,24 +3,9 @@ import { createAgentUIStreamResponse, type UIMessage } from "ai";
 import { chatRequestSchema } from "./schema";
 import { createMainAgent } from "../agents/main";
 import { evaluateAssistantResponse } from "../agents/judge";
-import { evaluationStorage } from "../services/evaluation-storage";
 
 export const maxDuration = 30;
 
-function extractTextFromMessage(message: UIMessage | undefined): string {
-  if (!message?.parts?.length) {
-    return "";
-  }
-
-  const textParts = message.parts.flatMap((part) => {
-    if (part.type !== "text") {
-      return [];
-    }
-    return [typeof part.text === "string" ? part.text : ""];
-  });
-
-  return textParts.join("\n").trim();
-}
 
 export async function POST(req: Request) {
   console.log("Received chat request");
@@ -40,7 +25,7 @@ export async function POST(req: Request) {
   const messages = body.data.messages as UIMessage[];
 
   console.log(JSON.stringify({ userId, messages }, null, 2));
-  const mainAgent = await createMainAgent(userId);
+  const { agent: mainAgent, toolsMeta } = await createMainAgent(userId);
   const lastUserMessage = [...messages]
     .reverse()
     .find((message) => message.role === "user");
@@ -50,25 +35,15 @@ export async function POST(req: Request) {
     uiMessages: messages,
     sendReasoning: true,
     sendSources: true,
-    onFinish: async ({ responseMessage }) => {
-      try {
-        const evaluation = await evaluateAssistantResponse({
-          userInput: lastUserMessage,
-          responseMessage,
-        });
-
-        const userQuestion = extractTextFromMessage(lastUserMessage);
-        const assistantAnswer = extractTextFromMessage(responseMessage);
-
-        await evaluationStorage.save({
-          userId,
-          userQuestion,
-          assistantAnswer,
-          evaluation,
-        });
-      } catch (error) {
+    onFinish: ({ responseMessage }) => {
+      evaluateAssistantResponse({
+        userId,
+        userInput: lastUserMessage,
+        responseMessage,
+        availableTools: toolsMeta,
+      }).catch((error) => {
         console.error("Judge evaluation failed:", error);
-      }
+      });
     },
   });
 }

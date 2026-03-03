@@ -27,20 +27,23 @@ export async function createMainAgent(userId: string) {
   console.log("Knowledge base tools created");
   const memoryTools = createMemoryTools(userId);
   console.log("Memory tools created");
-  return new ToolLoopAgent({
+  const tools = { ...knowledgeBaseTools, ...memoryTools };
+  const toolsMeta = Object.entries(tools).map(([name, t]) => ({
+    name,
+    description: (t as { description?: string }).description ?? name,
+  }));
+  const agent = new ToolLoopAgent({
     model,
     instructions: MAIN_AGENT_SYSTEM_PROMPT,
     stopWhen: stepCountIs(5),
-    tools: {
-      ...knowledgeBaseTools,
-      ...memoryTools,
-    },
+    tools,
     providerOptions: {
       openai: {
-        reasoningEffort: "high",
+        reasoningEffort: "medium",
         reasoningSummary: "auto",
       },
     },
     onFinish: () => knowledgeBaseMcpClient.close(),
   });
+  return { agent, toolsMeta };
 }
