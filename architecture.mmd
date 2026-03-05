@@ -1,0 +1,100 @@
+flowchart TB
+  user([User])
+
+  %% Chatbot
+  subgraph chatbot["Chatbot"]
+    web_ui[Web Interface]
+    subgraph server["Server"]
+        subgraph api["API"]
+            direction BT
+            chat_endpoint[Chat]
+            files_endpoint[Files]
+        end
+        subgraph main_agent["Main Agent"]
+            main_llm[LLM: GPT-5.2]
+                subgraph memory_tools["User Memory Tools"]
+                    direction BT
+                    search_memories
+                    save_memory
+                    delete_memory
+                    list_memories
+                end
+                kb_tools[Knowledge Base Tools]
+        end
+        subgraph research_agent["Codebase Agent"]
+            research_llm[LLM: GPT-5.2]
+            github_tools[GitHub Tools]
+        end
+        subgraph judge_agent["Judge Agent"]
+            judge_llm[LLM: GPT-5.2]
+        end
+    end
+  end
+
+  %% Knowledge Base
+  subgraph knowledge_base["Knowledge Base"]
+    observer[Observer polls knowledge_base/]
+    subgraph kb_mcp["MCP"]
+        search_knowledge_base
+        get_indexing_status
+        upload_file_from_url
+    end
+    subgraph worker["Worker"]
+        chunker[Chunker]
+        embed_chunks[Embedder]
+        subgraph loaders["Loaders"]
+            direction BT
+            pdf_loader[PDF Loader: PyPDFParser]
+            audio_loader[Audio Loader: faster-whisper]
+        end
+    end
+  end
+
+
+  %% Vector Database
+  subgraph vector_db["Vector Database"]
+    direction TB
+    knowledge_store[(Knowledge Store)]
+    evaluation_store[(Evaluation Store)]
+    memory_store[(Memory Store)]
+  end
+
+  %% File System
+  subgraph file_system["File System"]
+    direction TB
+    docs["Knowledge Base Files"]
+    indexer_state[(Indexer State)]
+  end
+
+  %% Embedder Service
+  subgraph embedder_service["Embedder Service"]
+    embed_model["HuggingFace Embeddings<br/>Qwen3-Embedding-0.6B"]
+    embed_api["API Endpoint"]
+  end
+
+
+  github_mcp[GitHub MCP]
+  openai_api[OpenAI API]
+
+  %% Indexer flow
+  docs -->|new files detected| observer --> indexer_state
+  indexer_state <--> worker
+  worker --> loaders -->|raw text| chunker -->|chunks| embed_chunks -->|vectors + chunks| vector_db
+  embed_chunks --> embed_api --> embed_model
+
+  %% Chat flow
+  user --> web_ui --> chat_endpoint --> main_agent
+  user --> files_endpoint --> docs
+  main_agent --> research_agent
+  main_agent --> judge_agent
+  kb_tools --> kb_mcp
+  main_llm --> memory_tools
+  main_llm --> openai_api
+  main_llm --> kb_tools
+  research_llm ---> openai_api
+  judge_llm ---> openai_api
+  judge_agent --> evaluation_store
+  memory_tools --> memory_store
+  github_tools --> github_mcp
+
+  docs@{ shape: docs}

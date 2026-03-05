@@ -36,7 +36,7 @@ const searchKnowledgeBaseOutputSchema = z.object({
   results: z.array(searchKnowledgeBaseHitSchema),
 });
 
-export const knowledgeBaseMcpToolSchemas = {
+const knowledgeBaseMcpToolSchemas = {
   upload_file_from_url: {
     inputSchema: uploadFileFromUrlInputSchema,
     outputSchema: uploadFileOutputSchema,
@@ -51,7 +51,7 @@ export const knowledgeBaseMcpToolSchemas = {
   },
 } as const;
 
-export async function getKnowledgeBaseMcpTool(client: MCPClient) {
+export async function getKnowledgeBaseTools(client: MCPClient) {
   return await client.tools({
     schemas: knowledgeBaseMcpToolSchemas,
   });
