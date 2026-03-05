@@ -14,6 +14,9 @@ const configSchema = z.object({
   OPENAI_JUDGE_MODEL: z.string().min(1).default("gpt-5.2"),
   MEMORY_TOP_K: z.coerce.number().int().positive().default(5),
   EMBEDDING_VECTOR_SIZE: z.coerce.number().int().positive().default(1024),
+  GITHUB_TOKEN: z.string().min(1),
+  GITHUB_OWNER: z.string().min(1),
+  GITHUB_REPO: z.string().min(1),
 });
 
 export const config = configSchema.parse({
@@ -25,4 +28,7 @@ export const config = configSchema.parse({
   OPENAI_CHAT_MODEL: process.env.OPENAI_CHAT_MODEL,
   OPENAI_JUDGE_MODEL: process.env.OPENAI_JUDGE_MODEL,
   QDRANT_URL: process.env.QDRANT_URL,
+  GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+  GITHUB_OWNER: process.env.GITHUB_OWNER,
+  GITHUB_REPO: process.env.GITHUB_REPO,
 });

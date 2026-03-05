@@ -54,8 +54,8 @@ function extractOrderedTrace(message: UIMessage | undefined): string {
         part.type === "dynamic-tool"
           ? String(part.toolName ?? "unknown")
           : part.type.slice("tool-".length);
-      const inputJson = JSON.stringify(part.input, null, 2);
-      const outputJson = JSON.stringify(part.output, null, 2);
+      const inputJson = JSON.stringify(part.input, null, 2).slice(0, 2000);
+      const outputJson = JSON.stringify(part.output, null, 2).slice(0, 2000);
       blocks.push(
         [
           `tool call [${toolIndex}]: ${name}`,

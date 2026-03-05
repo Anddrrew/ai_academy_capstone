@@ -64,9 +64,10 @@ export class EvaluationStorage {
   }: SaveEvaluationInput) {
     await this.ensureCollection();
     const createdAt = Math.floor(Date.now() / 1000);
-    const vector = await embedderService.embedQuery(
-      [userQuestion, assistantTrace, evaluation.feedback].join("\n"),
-    );
+    const textToEmbed = [userQuestion, assistantTrace, evaluation.feedback]
+      .join("\n")
+      .slice(0, 4000);
+    const vector = await embedderService.embedQuery(textToEmbed);
 
     await this.qdrant.upsert(this.collectionName, {
       wait: true,

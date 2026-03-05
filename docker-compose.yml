@@ -34,6 +34,9 @@ services:
       QDRANT_URL: http://qdrant:6333
       EMBEDDER_URL: http://host.docker.internal:3003/embed
       EMBEDDING_VECTOR_SIZE: ${EMBEDDING__VECTOR_SIZE}
+      GITHUB_TOKEN: ${GITHUB__TOKEN}
+      GITHUB_OWNER: ${GITHUB__OWNER}
+      GITHUB_REPO: ${GITHUB__REPO}
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     depends_on:

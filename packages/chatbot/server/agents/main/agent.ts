@@ -5,7 +5,9 @@ import { ToolLoopAgent, stepCountIs, wrapLanguageModel } from "ai";
 import { config } from "@/server/config";
 import { MAIN_AGENT_SYSTEM_PROMPT } from "./prompt";
 import { createKnowledgeBaseMcpClient } from "@/server/mcp/knowledge-base";
+import { createGithubMcpClient } from "@/server/mcp/github";
 import { getKnowledgeBaseMcpTool } from "./tools/knowledge-base";
+import { getGithubMcpTools } from "./tools/github";
 import { createMemoryTools } from "./tools/memory";
 
 const provider = createOpenAI({
@@ -25,9 +27,15 @@ export async function createMainAgent(userId: string) {
     knowledgeBaseMcpClient,
   );
   console.log("Knowledge base tools created");
+
+  const githubMcpClient = await createGithubMcpClient();
+  console.log("GitHub MCP client created");
+  const githubTools = await getGithubMcpTools(githubMcpClient);
+  console.log("GitHub tools created");
+
   const memoryTools = createMemoryTools(userId);
   console.log("Memory tools created");
-  const tools = { ...knowledgeBaseTools, ...memoryTools };
+  const tools = { ...knowledgeBaseTools, ...githubTools, ...memoryTools };
   const toolsMeta = Object.entries(tools).map(([name, t]) => ({
     name,
     description: (t as { description?: string }).description ?? name,
@@ -43,7 +51,10 @@ export async function createMainAgent(userId: string) {
         reasoningSummary: "auto",
       },
     },
-    onFinish: () => knowledgeBaseMcpClient.close(),
+    onFinish: () => {
+      knowledgeBaseMcpClient.close();
+      githubMcpClient.close();
+    },
   });
   return { agent, toolsMeta };
 }
