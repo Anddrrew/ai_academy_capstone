@@ -1,7 +1,0 @@
-POST http://localhost:3001/chat
-Content-Type: application/json
-
-{
-  "question": "What are the production Do's for RAG?"
-}
-

@@ -208,9 +208,10 @@ __marimo__/
 
 
 task.txt
-knowledge_base/
+/knowledge_base/
 huggingface_cache/
 logs/
 
 .DB_Store/
 .DS_Store
+*.db
