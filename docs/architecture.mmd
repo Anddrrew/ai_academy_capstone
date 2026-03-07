@@ -5,21 +5,28 @@ config:
 ---
 flowchart TB
   user([User])
-  subgraph chatbot["Chatbot"]
-    web_ui[Web Interface]
-    subgraph server["Server"]
+  user --> web_ui
+  web_ui[Web Interface]
+  web_ui --> chat_endpoint
+
+  subgraph chatbot["Chatbot Server"]
         chat_endpoint[Chat Endpoint]
         subgraph main_agent["Main Agent"]
             main_llm[LLM: GPT-5.2]
-            subgraph memory_tools["User Memory Tools"]
-                search_memories
-                save_memory
-                delete_memory
-                list_memories
+            subgraph mem_tools["User Memory Tools"]
+                mem_search[search_memories]
+                mem_save[save_memory]
+                mem_delete[delete_memory]
+                mem_list[list_memories]
+                mem_qdrant[Qdrant Memory Client]
+                mem_search --> mem_qdrant
+                mem_save --> mem_qdrant
+                mem_delete --> mem_qdrant
+                mem_list --> mem_qdrant
             end
             kb_tools[Knowledge Base Tools]
             main_llm --> kb_tools
-            main_llm --> memory_tools
+            main_llm --> mem_tools
         end
         subgraph research_agent["Codebase Agent"]
             research_llm[LLM: GPT-5.3-Codex]
@@ -28,71 +35,77 @@ flowchart TB
         end
         subgraph judge_agent["Judge Agent"]
             judge_llm[LLM: GPT-5.2]
+            judge_qdrant[Qdrant Evaluation Client]
         end
+        mem_tools --> mem_qdrant
+        judge_agent --> judge_qdrant
         chat_endpoint --> main_agent
         main_agent --> research_agent
         main_agent --> judge_agent
-    end
-    web_ui --> chat_endpoint
   end
-  subgraph knowledge_base["Knowledge Base"]
-    direction LR
-    observer[File System Observer]
-    subgraph worker["Worker"]
-        chunker[Chunker]
-        embed_chunks[Embedder]
-        subgraph loaders["Loaders"]
-            direction BT
-            pdf_loader[PDF Loader: PyPDFParser]
-            audio_loader[Audio Loader: faster-whisper]
-        end
-        loaders --> |raw text| chunker
-        chunker --> |chunks| embed_chunks
+  subgraph kb["Knowledge Service"]
+    kb_observer[File System Observer]
+    kb_embed_client[Embedder Client]
+    kb_qdrant[Qdrant Client]
+    kb_sqlite[SQLite Client]
+    subgraph kb_indexer["Indexer"]
+        kb_chunker[Chunker]
+        kb_pdf_loader[PDF Loader<br/>PyPDFParser]
+        kb_audio_loader[Audio Loader<br/>faster-whisper]
+        kb_text_loader[Text Loader<br/>LangChain ]
+        kb_pdf_loader --> |raw text| kb_chunker
+        kb_audio_loader --> |raw text| kb_chunker
+        kb_text_loader --> |raw text| kb_chunker
     end
-    subgraph kb_api["API"]
-        files_endpoint[Files Endpoint]
+        kb_files_endpoint[Files API Endpoint]
+    
         subgraph kb_mcp["MCP"]
-            search_knowledge_base
-            get_indexing_status
-            upload_file_from_url
+            kb_mcp_search[search_knowledge_base]
+            kb_mcp_status[get_indexing_status]
+            kb_mcp_upload[upload_file_from_url]
         end
-    end
+    kb_chunker --> |chunks| kb_embed_client
+    kb_indexer --> kb_qdrant
+    kb_mcp_search --> kb_embed_client
+    kb_mcp_search --> kb_qdrant
+    kb_mcp_status --> kb_sqlite
+
+    kb_observer --> |pushes task| kb_sqlite
+    kb_indexer -->|polls for task| kb_sqlite
+
+    kb_mcp_upload --> |pushes new file task| kb_sqlite
+
   end
-  subgraph vector_db["Qdrant Database"]
-    direction TB
-    knowledge_store[(Knowledge Store)]
-    evaluation_store[(Evaluation Store)]
-    memory_store[(Memory Store)]
-  end
-  subgraph file_system["File System"]
-    indexer_state[(Indexer State)]
-    docs["Knowledge Base Files"]
-  end
-  subgraph embedder_service["Embedder Service"]
+  subgraph embedder["Embedder Service"]
     direction TB
     embed_model["HuggingFace Embeddings<br/>Qwen3-Embedding-0.6B"]
     embed_api["API Endpoint"]
     embed_api --> embed_model
   end
+  subgraph qdrant["Qdrant Database"]
+    direction TB
+    qdrant_knowledge[(Knowledge Store)]
+    qdrant_evaluation[(Evaluation Store)]
+    qdrant_memory[(Memory Store)]
+  end
+  subgraph fs["Local File System"]
+    fs_docs["Knowledge Base Files"]
+    fs_state[(Indexer State)]
+  end
 
 
   github_mcp[GitHub MCP]
-  openai_api[OpenAI API]
-  observer -->|polls for changes| docs
-  observer --> |pushes indexing tasks| indexer_state
-  worker -->|polls for tasks| indexer_state
-  user --> web_ui
-  user --> files_endpoint --> docs
+  kb_observer -->|polls new file| fs_docs
   kb_tools --> kb_mcp
-  main_llm --> openai_api
-  research_llm --> openai_api
-  judge_llm --> openai_api
-  judge_llm --> evaluation_store
-  memory_tools --> memory_store
+  mem_qdrant --> qdrant_memory
+  judge_qdrant --> qdrant_evaluation
   github_tools --> github_mcp
 
-  embed_chunks --> |chunks| embed_api
-  embed_chunks ---> |chunks + payload| vector_db
+  kb_embed_client --> |chunks| embed_api
+  kb_qdrant --> qdrant_knowledge
+  kb_sqlite --> fs_state
 
 
-  docs@{ shape: docs}
+  user --> kb_files_endpoint --> |exposes| fs_docs
+  kb_mcp_upload --> |saves file| fs_docs
+  fs_docs@{ shape: docs}
