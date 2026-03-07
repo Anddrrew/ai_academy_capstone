@@ -1,44 +1,43 @@
+---
+config:
+  layout: elk
+  theme: default
+---
 flowchart TB
   user([User])
-
-  %% Chatbot
   subgraph chatbot["Chatbot"]
     web_ui[Web Interface]
     subgraph server["Server"]
-        subgraph api["API"]
-            direction BT
-            chat_endpoint[Chat]
-            files_endpoint[Files]
-        end
+        chat_endpoint[Chat Endpoint]
         subgraph main_agent["Main Agent"]
             main_llm[LLM: GPT-5.2]
-                subgraph memory_tools["User Memory Tools"]
-                    direction BT
-                    search_memories
-                    save_memory
-                    delete_memory
-                    list_memories
-                end
-                kb_tools[Knowledge Base Tools]
+            subgraph memory_tools["User Memory Tools"]
+                search_memories
+                save_memory
+                delete_memory
+                list_memories
+            end
+            kb_tools[Knowledge Base Tools]
+            main_llm --> kb_tools
+            main_llm --> memory_tools
         end
         subgraph research_agent["Codebase Agent"]
             research_llm[LLM: GPT-5.2]
             github_tools[GitHub Tools]
+            research_llm --> github_tools
         end
         subgraph judge_agent["Judge Agent"]
             judge_llm[LLM: GPT-5.2]
         end
+        chat_endpoint --> main_agent
+        main_agent --> research_agent
+        main_agent --> judge_agent
     end
+    web_ui --> chat_endpoint
   end
-
-  %% Knowledge Base
   subgraph knowledge_base["Knowledge Base"]
-    observer[Observer polls knowledge_base/]
-    subgraph kb_mcp["MCP"]
-        search_knowledge_base
-        get_indexing_status
-        upload_file_from_url
-    end
+    direction LR
+    observer[File System Observer]
     subgraph worker["Worker"]
         chunker[Chunker]
         embed_chunks[Embedder]
@@ -47,54 +46,53 @@ flowchart TB
             pdf_loader[PDF Loader: PyPDFParser]
             audio_loader[Audio Loader: faster-whisper]
         end
+        loaders --> |raw text| chunker
+        chunker --> |chunks| embed_chunks
+    end
+    subgraph kb_api["API"]
+        files_endpoint[Files Endpoint]
+        subgraph kb_mcp["MCP"]
+            search_knowledge_base
+            get_indexing_status
+            upload_file_from_url
+        end
     end
   end
-
-
-  %% Vector Database
-  subgraph vector_db["Vector Database"]
+  subgraph vector_db["Qdrant Database"]
     direction TB
     knowledge_store[(Knowledge Store)]
     evaluation_store[(Evaluation Store)]
     memory_store[(Memory Store)]
   end
-
-  %% File System
   subgraph file_system["File System"]
-    direction TB
-    docs["Knowledge Base Files"]
     indexer_state[(Indexer State)]
+    docs["Knowledge Base Files"]
   end
-
-  %% Embedder Service
   subgraph embedder_service["Embedder Service"]
+    direction TB
     embed_model["HuggingFace Embeddings<br/>Qwen3-Embedding-0.6B"]
     embed_api["API Endpoint"]
+    embed_api --> embed_model
   end
 
 
   github_mcp[GitHub MCP]
   openai_api[OpenAI API]
-
-  %% Indexer flow
-  docs -->|new files detected| observer --> indexer_state
-  indexer_state <--> worker
-  worker --> loaders -->|raw text| chunker -->|chunks| embed_chunks -->|vectors + chunks| vector_db
-  embed_chunks --> embed_api --> embed_model
-
-  %% Chat flow
-  user --> web_ui --> chat_endpoint --> main_agent
+  observer -->|polls for changes0| docs
+  observer --> |pushes indexing tasks| indexer_state
+  worker -->|polls for tasks| indexer_state
+  user --> web_ui
   user --> files_endpoint --> docs
-  main_agent --> research_agent
-  main_agent --> judge_agent
   kb_tools --> kb_mcp
-  main_llm --> memory_tools
   main_llm --> openai_api
-  main_llm --> kb_tools
-  research_llm ---> openai_api
-  judge_llm ---> openai_api
-  judge_agent --> evaluation_store
+  research_llm --> openai_api
+  judge_llm --> openai_api
+  judge_llm --> evaluation_store
   memory_tools --> memory_store
   github_tools --> github_mcp
+
+  embed_chunks --> |chunks| embed_api
+  embed_chunks ---> |chunks + payload| vector_db
+
 
   docs@{ shape: docs}
