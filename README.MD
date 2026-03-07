@@ -13,6 +13,10 @@ Local multi-service RAG assistant with:
 Source file: [architecture.mmd](./architecture.mmd)
 
 ```mermaid
+---
+config:
+  layout: elk
+---
 flowchart TB
   user([User])
   subgraph chatbot["Chatbot"]
