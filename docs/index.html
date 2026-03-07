@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Academy Capstone Architecture</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #f6f8fb;
+        color: #111827;
+      }
+      .wrap {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      p {
+        margin: 0 0 16px;
+        color: #4b5563;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px;
+        overflow: auto;
+      }
+      .error {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>AI Academy Capstone Architecture</h1>
+      <p>Source: <code>docs/architecture.mmd</code></p>
+      <section class="card">
+        <div id="diagram" class="mermaid">Loading diagram...</div>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs";
+
+      mermaid.registerLayoutLoaders(elkLayouts);
+      mermaid.initialize({ startOnLoad: false });
+
+      const el = document.getElementById("diagram");
+
+      try {
+        const response = await fetch("./architecture.mmd", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load Mermaid source: HTTP ${response.status}`);
+        }
+
+        const source = await response.text();
+        const { svg } = await mermaid.render("architecture-diagram", source);
+        el.innerHTML = svg;
+      } catch (error) {
+        el.classList.add("error");
+        el.textContent = `Diagram render failed: ${error.message}`;
+      }
+    </script>
+  </body>
+</html>

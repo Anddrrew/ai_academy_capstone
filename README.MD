@@ -10,7 +10,9 @@ Local multi-service RAG assistant with:
 
 ## Architecture
 
-Source file: [architecture.mmd](./architecture.mmd)
+Live render: https://anddrrew.github.io/ai_academy_capstone/
+
+Source file: [docs/architecture.mmd](./docs/architecture.mmd)
 
 ```mermaid
 ---
