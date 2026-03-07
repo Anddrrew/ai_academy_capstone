@@ -78,7 +78,7 @@ flowchart TB
 
   github_mcp[GitHub MCP]
   openai_api[OpenAI API]
-  observer -->|polls for changes0| docs
+  observer -->|polls for changes| docs
   observer --> |pushes indexing tasks| indexer_state
   worker -->|polls for tasks| indexer_state
   user --> web_ui

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-academy-embedder"
+version = "0.1.0"
+description = "Embedder service"
+requires-python = "==3.11.14"
+dependencies = [
+  "fastapi[standard]",
+  "langchain-huggingface",
+  "pydantic-settings",
+  "rich",
+  "sentence-transformers",
+]
+
+[tool.setuptools]
+py-modules = ["main"]
