@@ -45,7 +45,9 @@ Local multi-service RAG assistant with:
 
 ## Architecture
 
-Link to diagram: https://anddrrew.github.io/ai_academy_capstone/
+[Link to diagram](https://anddrrew.github.io/ai_academy_capstone/)
+
+[![Architecture Diagram](docs/architecture.png)](https://anddrrew.github.io/ai_academy_capstone/)
 
 - The project is split into microservices to keep responsibilities isolated and scalable:
   - `chatbot` for UI/agent orchestration
