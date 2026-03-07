@@ -21,11 +21,9 @@ services:
     env_file:
       - .env
     command: >
-      sh -lc "(npx @ai-sdk/devtools >/workspace_logs/devtools.log 2>&1 || true) &
-      npm run dev -- --hostname 0.0.0.0 --port 3000 2>&1 | tee /workspace_logs/chatbot.log"
+      sh -lc "npm run dev -- --hostname 0.0.0.0 --port 3000 2>&1 | tee /workspace_logs/chatbot.log"
     ports:
       - "3001:3000"
-      - "4983:4983"
     volumes:
       - ./packages/chatbot:/app
       - ./logs:/workspace_logs

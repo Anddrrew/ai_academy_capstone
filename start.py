@@ -47,7 +47,6 @@ SERVICES = [
 DOCKER_SERVICES = [
     {"name": "Qdrant", "port": 6333, "url": "http://localhost:6333/dashboard", "health_url": "http://localhost:6333/healthz"},
     {"name": "Chatbot", "port": 3001, "url": "http://localhost:3001", "health_url": "http://localhost:3001"},
-    {"name": "Devtools", "port": 4983, "url": "http://localhost:4983", "health_url": "http://localhost:4983"},
 ]
 
 

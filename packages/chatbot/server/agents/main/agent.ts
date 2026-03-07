@@ -1,6 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { devToolsMiddleware } from "@ai-sdk/devtools";
-import { ToolLoopAgent, stepCountIs, wrapLanguageModel } from "ai";
+import { ToolLoopAgent, stepCountIs } from "ai";
 
 import { config } from "@/server/config";
 import { MAIN_AGENT_SYSTEM_PROMPT } from "./prompt";
@@ -13,10 +12,7 @@ const provider = createOpenAI({
   apiKey: config.OPENAI_API_KEY,
 });
 
-const model = wrapLanguageModel({
-  model: provider.responses(config.OPENAI_CHAT_MODEL),
-  middleware: devToolsMiddleware(),
-});
+const model = provider.responses(config.OPENAI_CHAT_MODEL);
 
 export async function createMainAgent(userId: string) {
   console.log(`Creating main agent for user ${userId}`);
