@@ -1,0 +1,7 @@
+{
+  "python.analysis.extraPaths": [
+    "packages/",
+    "packages/embedder/src",
+    "packages/knowledge_base/src"
+  ]
+}

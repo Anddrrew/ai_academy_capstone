@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import BaseModel, Field
 from rich.logging import RichHandler
-from config import config
+from shared_config import config
 
 logging.basicConfig(
     level="INFO",

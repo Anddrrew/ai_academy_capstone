@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 
-from config import config
+from shared_config import config
 from services.file_manager import file_manager
 from indexer.loaders import SUPPORTED_EXTENSIONS
 from indexer.store import IndexStore, FileType, Priority

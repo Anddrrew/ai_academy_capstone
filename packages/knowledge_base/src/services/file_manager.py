@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Iterator
 from urllib.parse import quote
 
-from config import config
+from shared_config import config
 
 
 class FileManager:

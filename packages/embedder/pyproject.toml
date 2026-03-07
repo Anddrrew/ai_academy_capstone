@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Embedder service"
 requires-python = "==3.11.14"
 dependencies = [
+  "ai-academy-shared-config",
   "fastapi[standard]",
   "langchain-huggingface",
   "pydantic-settings",
@@ -15,5 +16,9 @@ dependencies = [
   "sentence-transformers",
 ]
 
+[tool.uv.sources]
+"ai-academy-shared-config" = { workspace = true }
+
 [tool.setuptools]
+package-dir = {"" = "src"}
 py-modules = ["main"]

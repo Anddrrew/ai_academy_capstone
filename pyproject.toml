@@ -4,14 +4,20 @@ version = "0.1.0"
 description = "Root Python environment for local API services"
 readme = "README.MD"
 requires-python = "==3.11.14"
-dependencies = ["rich", "ai-academy-embedder", "ai-academy-knowledge-base"]
+dependencies = [
+  "rich",
+  "ai-academy-shared-config",
+  "ai-academy-embedder",
+  "ai-academy-knowledge-base",
+]
 
 [tool.uv.sources]
+"ai-academy-shared-config" = { workspace = true }
 "ai-academy-embedder" = { workspace = true }
 "ai-academy-knowledge-base" = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/embedder", "packages/knowledge_base"]
+members = ["packages/shared_config", "packages/embedder", "packages/knowledge_base"]
 
 [tool.uv]
 package = false

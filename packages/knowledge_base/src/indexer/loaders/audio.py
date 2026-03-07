@@ -3,7 +3,7 @@ from pathlib import Path
 
 from faster_whisper import WhisperModel, BatchedInferencePipeline
 
-from config import config
+from shared_config import config
 
 logger = logging.getLogger(__name__)
 model = WhisperModel(config.whisper.model)

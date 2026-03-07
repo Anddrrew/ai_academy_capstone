@@ -5,7 +5,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, ScoredPoint, FilterSelector, Filter
 from qdrant_client.models import Distance, VectorParams
 
-from config import config
+from shared_config import config
 from services.chunker import Chunk
 
 DEFAULT_SEARCH_LIMIT = config.qdrant.search_k

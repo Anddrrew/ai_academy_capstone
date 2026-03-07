@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Knowledge base indexing and MCP service"
 requires-python = "==3.11.14"
 dependencies = [
+  "ai-academy-shared-config",
   "fastapi[standard]",
   "faster-whisper",
   "httpx",
@@ -20,9 +21,13 @@ dependencies = [
   "rich",
 ]
 
+[tool.uv.sources]
+"ai-academy-shared-config" = { workspace = true }
+
 [tool.setuptools]
+package-dir = { "" = "src" }
 py-modules = ["main", "mcp_tools"]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["indexer*", "services*"]

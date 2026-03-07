@@ -3,7 +3,7 @@ import logging
 import httpx
 
 from services.chunker import Chunk
-from config import config
+from shared_config import config
 
 SERVICE_ENDPOINT = config.embedding.public_url
 

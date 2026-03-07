@@ -1,13 +1,12 @@
 import json
-import multiprocessing
 import signal
-import sys
 import os
 import time
+import threading
+import subprocess
 import urllib.request
 import urllib.error
 
-import uvicorn
 from rich.live import Live
 from rich.table import Table
 from rich.text import Text
@@ -22,23 +21,19 @@ START_TIME = time.time()
 
 SERVICES = [
     {
-        "app": "main:app",
         "port": 3003,
         "name": "embedder",
-        "pythonpath": [
-            os.path.join(ROOT, "packages", "embedder"),
-            os.path.join(ROOT, "packages"),
-        ],
+        "project": os.path.join(ROOT, "packages", "embedder"),
+        "app_dir": os.path.join(ROOT, "packages", "embedder", "src"),
+        "app": "main:app",
         "health_url": "http://localhost:3003/status",
     },
     {
-        "app": "main:app",
         "port": 3002,
         "name": "knowledge_base",
-        "pythonpath": [
-            os.path.join(ROOT, "packages", "knowledge_base"),
-            os.path.join(ROOT, "packages"),
-        ],
+        "project": os.path.join(ROOT, "packages", "knowledge_base"),
+        "app_dir": os.path.join(ROOT, "packages", "knowledge_base", "src"),
+        "app": "main:app",
         "wait_for": "embedder",
         "health_url": "http://localhost:3002/status",
     }
@@ -57,10 +52,10 @@ def _resolve_health_url(service_name: str) -> str:
     raise ValueError(f"Unknown service: {service_name}")
 
 
-def wait_for_service(dependency: str, name: str, statuses: dict, interval: int = 2):
+def wait_for_service(dependency: str, name: str, statuses: dict, stop_event: threading.Event, interval: int = 2):
     url = _resolve_health_url(dependency)
     statuses[name] = f"Waiting [{dependency.capitalize()}]"
-    while True:
+    while not stop_event.is_set():
         try:
             resp = urllib.request.urlopen(url, timeout=5)
             if resp.status == 200:
@@ -70,36 +65,55 @@ def wait_for_service(dependency: str, name: str, statuses: dict, interval: int =
         time.sleep(interval)
 
 
-def run_service(service: dict, statuses: dict):
+def run_service(service: dict, statuses: dict, processes: dict[str, subprocess.Popen], stop_event: threading.Event):
     log_file = open(os.path.join(LOGS_DIR, f"{service['name']}.log"), "w")
-    os.dup2(log_file.fileno(), sys.stdout.fileno())
-    os.dup2(log_file.fileno(), sys.stderr.fileno())
-    sys.stdout = log_file
-    sys.stderr = log_file
-
     dependencies = service.get("wait_for", [])
     if isinstance(dependencies, str):
         dependencies = [dependencies]
     for dependency in dependencies:
-        wait_for_service(dependency, service["name"], statuses)
-
-    for p in service["pythonpath"]:
-        if p not in sys.path:
-            sys.path.insert(0, p)
+        if stop_event.is_set():
+            statuses[service["name"]] = "Stopped"
+            return
+        wait_for_service(dependency, service["name"], statuses, stop_event)
 
     for key, value in service.get("env", {}).items():
         os.environ[key] = value
 
     statuses[service["name"]] = "Starting..."
-
-    uvicorn.run(
+    env = os.environ.copy()
+    env.update(service.get("env", {}))
+    cmd = [
+        "uv",
+        "run",
+        "--project",
+        service["project"],
+        "python",
+        "-m",
+        "uvicorn",
         service["app"],
-        host="0.0.0.0",
-        port=service["port"],
-        log_level="info",
+        "--app-dir",
+        service["app_dir"],
+        "--host",
+        "0.0.0.0",
+        "--port",
+        str(service["port"]),
+        "--log-level",
+        "info",
+    ]
+    process = subprocess.Popen(
+        cmd,
+        cwd=service["project"],
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        env=env,
+        text=True,
     )
-
-    statuses[service["name"]] = "Stopped"
+    processes[service["name"]] = process
+    code = process.wait()
+    if stop_event.is_set():
+        statuses[service["name"]] = "Stopped"
+    else:
+        statuses[service["name"]] = f"Exited ({code})"
 
 
 def check_health(url: str) -> str | None:
@@ -194,19 +208,25 @@ def build_table(statuses: dict) -> Table:
 
 
 def main():
-    manager = multiprocessing.Manager()
-    statuses = manager.dict()
+    statuses: dict[str, str] = {}
+    processes: dict[str, subprocess.Popen] = {}
+    launcher_threads: list[threading.Thread] = []
+    stop_event = threading.Event()
 
     for svc in DOCKER_SERVICES:
         statuses[svc["name"]] = "Checking..."
     for svc in SERVICES:
         statuses[svc["name"]] = "Pending"
 
-    processes: list[multiprocessing.Process] = []
     for svc in SERVICES:
-        p = multiprocessing.Process(target=run_service, args=(svc, statuses), name=svc["name"])
-        p.start()
-        processes.append(p)
+        t = threading.Thread(
+            target=run_service,
+            args=(svc, statuses, processes, stop_event),
+            name=f"launcher-{svc['name']}",
+            daemon=True,
+        )
+        t.start()
+        launcher_threads.append(t)
 
     running = True
     last_health_check = 0.0
@@ -214,12 +234,15 @@ def main():
     def shutdown(sig, frame):
         nonlocal running
         running = False
-        for p in processes:
-            p.terminate()
-        for p in processes:
-            p.join(timeout=5)
-            if p.is_alive():
-                p.kill()
+        stop_event.set()
+        for process in processes.values():
+            if process.poll() is None:
+                process.terminate()
+        for process in processes.values():
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
         for svc in SERVICES:
             statuses[svc["name"]] = "Stopped"
 
@@ -235,11 +258,9 @@ def main():
 
             live.update(build_table(statuses))
 
-            if all(not p.is_alive() for p in processes):
+            if launcher_threads and all(not t.is_alive() for t in launcher_threads):
                 break
             time.sleep(0.25)
-
-    manager.shutdown()
 
 
 if __name__ == "__main__":

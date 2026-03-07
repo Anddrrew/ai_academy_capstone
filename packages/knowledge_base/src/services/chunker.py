@@ -4,7 +4,7 @@ import logging
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-from config import config
+from shared_config import config
 
 
 @dataclass
