@@ -8,7 +8,8 @@ export async function createGithubMcpClient() {
       url: "https://api.githubcopilot.com/mcp/",
       headers: {
         Authorization: `Bearer ${config.GITHUB_TOKEN}`,
-        "X-MCP-Toolsets": "repos",
+        "X-MCP-Toolsets": "git,repos,users",
+        "X-MCP-Readonly": "true",
       },
     },
   });
