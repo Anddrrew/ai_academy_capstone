@@ -37,8 +37,6 @@ flowchart TB
             judge_llm[LLM: GPT-5.2]
             judge_qdrant[Qdrant Evaluation Client]
         end
-        mem_tools --> mem_qdrant
-        judge_agent --> judge_qdrant
         chat_endpoint --> main_agent
         main_agent --> research_agent
         main_agent --> judge_agent
