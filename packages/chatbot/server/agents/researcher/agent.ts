@@ -31,7 +31,7 @@ export async function runCodebaseResearchAgent(
     const agent = new ToolLoopAgent({
       model: provider.responses(config.OPENAI_CODE_EXPLORER_MODEL),
       instructions: CODEBASE_RESEARCHER_SYSTEM_PROMPT,
-      stopWhen: stepCountIs(15),
+      stopWhen: stepCountIs(25),
       tools: githubTools,
       providerOptions: {
         openai: {
