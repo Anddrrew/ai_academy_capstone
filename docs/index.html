@@ -1,76 +1,115 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Academy Capstone Architecture</title>
-    <style>
-      :root {
-        color-scheme: light;
-      }
-      body {
-        margin: 0;
-        padding: 24px;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        background: #f6f8fb;
-        color: #111827;
-      }
-      .wrap {
-        max-width: 1400px;
-        margin: 0 auto;
-      }
-      h1 {
-        margin: 0 0 8px;
-        font-size: 28px;
-      }
-      p {
-        margin: 0 0 16px;
-        color: #4b5563;
-      }
-      .card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 16px;
-        overflow: auto;
-      }
-      .error {
-        color: #b91c1c;
-        font-weight: 600;
-      }
-    </style>
-  </head>
+<html>
   <body>
-    <main class="wrap">
-      <h1>AI Academy Capstone Architecture</h1>
-      <p>Source: <code>docs/architecture.mmd</code></p>
-      <section class="card">
-        <div id="diagram" class="mermaid">Loading diagram...</div>
-      </section>
-    </main>
+    <!-- Source code into mmd file -->
+    <div class="mermaid">
+---
+config:
+  layout: elk
+  theme: default
+---
+flowchart TB
+  user([User])
+  subgraph chatbot["Chatbot"]
+    web_ui[Web Interface]
+    subgraph server["Server"]
+        chat_endpoint[Chat Endpoint]
+        subgraph main_agent["Main Agent"]
+            main_llm[LLM: GPT-5.2]
+            subgraph memory_tools["User Memory Tools"]
+                search_memories
+                save_memory
+                delete_memory
+                list_memories
+            end
+            kb_tools[Knowledge Base Tools]
+            main_llm --> kb_tools
+            main_llm --> memory_tools
+        end
+        subgraph research_agent["Codebase Agent"]
+            research_llm[LLM: GPT-5.3-Codex]
+            github_tools[GitHub Tools]
+            research_llm --> github_tools
+        end
+        subgraph judge_agent["Judge Agent"]
+            judge_llm[LLM: GPT-5.2]
+        end
+        chat_endpoint --> main_agent
+        main_agent --> research_agent
+        main_agent --> judge_agent
+    end
+    web_ui --> chat_endpoint
+  end
+  subgraph knowledge_base["Knowledge Base"]
+    direction LR
+    observer[File System Observer]
+    subgraph worker["Worker"]
+        chunker[Chunker]
+        embed_chunks[Embedder]
+        subgraph loaders["Loaders"]
+            direction BT
+            pdf_loader[PDF Loader: PyPDFParser]
+            audio_loader[Audio Loader: faster-whisper]
+        end
+        loaders --> |raw text| chunker
+        chunker --> |chunks| embed_chunks
+    end
+    subgraph kb_api["API"]
+        files_endpoint[Files Endpoint]
+        subgraph kb_mcp["MCP"]
+            search_knowledge_base
+            get_indexing_status
+            upload_file_from_url
+        end
+    end
+  end
+  subgraph vector_db["Qdrant Database"]
+    direction TB
+    knowledge_store[(Knowledge Store)]
+    evaluation_store[(Evaluation Store)]
+    memory_store[(Memory Store)]
+  end
+  subgraph file_system["File System"]
+    indexer_state[(Indexer State)]
+    docs["Knowledge Base Files"]
+  end
+  subgraph embedder_service["Embedder Service"]
+    direction TB
+    embed_model["HuggingFace Embeddings<br/>Qwen3-Embedding-0.6B"]
+    embed_api["API Endpoint"]
+    embed_api --> embed_model
+  end
 
+
+  github_mcp[GitHub MCP]
+  openai_api[OpenAI API]
+  observer -->|polls for changes| docs
+  observer --> |pushes indexing tasks| indexer_state
+  worker -->|polls for tasks| indexer_state
+  user --> web_ui
+  user --> files_endpoint --> docs
+  kb_tools --> kb_mcp
+  main_llm --> openai_api
+  research_llm --> openai_api
+  judge_llm --> openai_api
+  judge_llm --> evaluation_store
+  memory_tools --> memory_store
+  github_tools --> github_mcp
+
+  embed_chunks --> |chunks| embed_api
+  embed_chunks ---> |chunks + payload| vector_db
+
+
+  docs@{ shape: docs}
+
+    </div>
     <script type="module">
       import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
       import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs";
 
       mermaid.registerLayoutLoaders(elkLayouts);
-      mermaid.initialize({ startOnLoad: false });
 
-      const el = document.getElementById("diagram");
-
-      try {
-        const response = await fetch("./architecture.mmd", { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`Failed to load Mermaid source: HTTP ${response.status}`);
-        }
-
-        const source = await response.text();
-        const { svg } = await mermaid.render("architecture-diagram", source);
-        el.innerHTML = svg;
-      } catch (error) {
-        el.classList.add("error");
-        el.textContent = `Diagram render failed: ${error.message}`;
-      }
+      mermaid.initialize({ startOnLoad: true });
     </script>
   </body>
 </html>
