@@ -40,7 +40,6 @@ Source file: [docs/architecture.mmd](./docs/architecture.mmd)
 ### Prerequisites
 
 - Docker + Docker Compose
-- Python 3.11.14
 - `uv` (https://docs.astral.sh/uv/#installation)
 
 ### Steps
@@ -57,16 +56,10 @@ cp .env.example .env
 uv sync
 ```
 
-3. Start Docker services.
+3. Start all services.
 
 ```bash
-docker compose up -d --build
-```
-
-4. Start Python services (embedder + knowledge base).
-
-```bash
-uv run python start.py
+docker compose up -d --build && uv run python start.py
 ```
 
 When startup is complete, open `http://localhost:3001`.
