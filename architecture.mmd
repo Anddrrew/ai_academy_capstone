@@ -22,7 +22,7 @@ flowchart TB
             main_llm --> memory_tools
         end
         subgraph research_agent["Codebase Agent"]
-            research_llm[LLM: GPT-5.2]
+            research_llm[LLM: GPT-5.3-Codex]
             github_tools[GitHub Tools]
             research_llm --> github_tools
         end
