@@ -9,8 +9,7 @@ from shared_config import config
 class FileManager:
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
-        self._knowledge_base_dir = Path(
-            __file__).parent.parent.parent.parent / "knowledge_base"
+        self._knowledge_base_dir = Path(__file__).resolve().parents[4] / "knowledge_base"
         self.logger.info(
             "Initialized FileManager with knowledge base directory: %s", self._knowledge_base_dir)
 
@@ -48,7 +47,8 @@ class FileManager:
         self._knowledge_base_dir.mkdir(parents=True, exist_ok=True)
         path = self._knowledge_base_dir / filename
         if path.exists():
-            raise FileExistsError(f"File '{filename}' already exists in the knowledge base.")
+            raise FileExistsError(
+                f"File '{filename}' already exists in the knowledge base.")
         path.write_bytes(data)
         self.logger.info("Saved file: %s (%d bytes)", filename, len(data))
         return path
