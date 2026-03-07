@@ -9,6 +9,7 @@ from config import config
 from services.chunker import Chunk
 
 DEFAULT_SEARCH_LIMIT = config.qdrant.search_k
+DEFAULT_MIN_SEARCH_SCORE = 0.7
 
 
 class KnowledgeStorage:
@@ -53,11 +54,17 @@ class KnowledgeStorage:
             return
         self._client.upsert(collection_name=self.collection_name, points=points)
 
-    def search(self, vector: list[float], k: int = DEFAULT_SEARCH_LIMIT) -> list[ScoredPoint]:
+    def search(
+        self,
+        vector: list[float],
+        k: int = DEFAULT_SEARCH_LIMIT,
+        min_score: float = DEFAULT_MIN_SEARCH_SCORE,
+    ) -> list[ScoredPoint]:
         result = self._client.query_points(
             collection_name=self.collection_name,
             query=vector,
             limit=k,
+            score_threshold=min_score,
         )
         return result.points
 

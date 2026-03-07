@@ -1,11 +1,15 @@
 from pathlib import Path
 
-from indexer.loaders import audio, pdf
+from indexer.loaders import audio, pdf, text
 
 LOADERS = {
     ".pdf": pdf.load,
     ".mp3": audio.load,
     ".mp4": audio.load,
+    ".txt": text.load,
+    ".md": text.load,
+    ".markdown": text.load,
+    ".rst": text.load,
 }
 
 SUPPORTED_EXTENSIONS = set(LOADERS.keys())
