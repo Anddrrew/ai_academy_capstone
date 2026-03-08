@@ -8,37 +8,60 @@ export const qdrantCollections = {
 const GITHUB_OWNER = "Anddrrew";
 const GITHUB_REPO = "ai_academy_capstone";
 
+// Schema with defaults on every field so parsing never throws.
+// Missing env vars produce warnings, not crashes.
 const configSchema = z.object({
   qdrant: z.object({
-    url: z.url(),
+    url: z.string().default(""),
   }),
   embedding: z.object({
-    publicUrl: z.url(),
+    publicUrl: z.string().default(""),
     vectorSize: z.coerce.number().int().positive().default(1024),
   }),
   openAI: z.object({
-    apiKey: z.string().min(1),
-    chatModel: z.string().min(1).default("gpt-5.2"),
-    codeExplorerModel: z.string().min(1).default("gpt-5.3-codex"),
-    judgeModel: z.string().min(1).default("gpt-5.2"),
+    apiKey: z.string().default(""),
+    chatModel: z.string().default("gpt-5.2"),
+    codeExplorerModel: z.string().default("gpt-5.3-codex"),
+    judgeModel: z.string().default("gpt-5.2"),
   }),
   knowledgeBase: z.object({
-    publicUrl: z.url(),
-    mcpUrl: z.url(),
+    publicUrl: z.string().default(""),
+    mcpUrl: z.string().default(""),
   }),
   github: z.object({
-    token: z.string().min(1),
-    owner: z.string().min(1).default(GITHUB_OWNER),
-    repo: z.string().min(1).default(GITHUB_REPO),
+    token: z.string().default(""),
+    owner: z.string().default(GITHUB_OWNER),
+    repo: z.string().default(GITHUB_REPO),
   }),
 
   MEMORY_TOP_K: z.coerce.number().int().positive().default(5),
 });
 
-export const config = configSchema.parse({
-  qdrant: {
-    url: process.env.QDRANT__URL,
-  },
+// Warn about missing required env vars (won't throw)
+const REQUIRED_ENV = {
+  QDRANT__URL: process.env.QDRANT__URL,
+  EMBEDDING__PUBLIC_URL: process.env.EMBEDDING__PUBLIC_URL,
+  OPENAI__API_KEY: process.env.OPENAI__API_KEY,
+  KNOWLEDGE_BASE__PUBLIC_URL: process.env.KNOWLEDGE_BASE__PUBLIC_URL,
+  KNOWLEDGE_BASE__MCP_URL: process.env.KNOWLEDGE_BASE__MCP_URL,
+  GITHUB__TOKEN: process.env.GITHUB__TOKEN,
+} as const;
+
+const missingVars = Object.entries(REQUIRED_ENV)
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+
+if (missingVars.length > 0) {
+  console.warn(
+    `⚠️  Missing env vars: ${missingVars.join(", ")}\n` +
+      `   This is expected during build. They must be set at runtime.`,
+  );
+}
+
+export type Config = z.infer<typeof configSchema>;
+
+export const config: Config = configSchema.parse({
+  qdrant: { url: process.env.QDRANT__URL },
   embedding: {
     publicUrl: process.env.EMBEDDING__PUBLIC_URL,
     vectorSize: process.env.EMBEDDING__VECTOR_SIZE,

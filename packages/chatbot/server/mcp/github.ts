@@ -7,7 +7,7 @@ export async function createGithubMcpClient() {
       type: "http",
       url: "https://api.githubcopilot.com/mcp/",
       headers: {
-        Authorization: `Bearer ${config.GITHUB_TOKEN}`,
+        Authorization: `Bearer ${config.github.token}`,
         "X-MCP-Toolsets": "git,repos,users",
         "X-MCP-Readonly": "true",
       },

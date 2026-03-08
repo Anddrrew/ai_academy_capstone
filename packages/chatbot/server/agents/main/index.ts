@@ -1,2 +1,2 @@
-export { MAIN_AGENT_SYSTEM_PROMPT } from "./prompt";
+export { buildMainAgentPrompt } from "./prompt";
 export { createMainAgent } from "./agent";

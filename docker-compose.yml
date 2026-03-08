@@ -25,16 +25,11 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      - ./packages/chatbot:/app
       - ./logs:/workspace_logs
-      - /app/node_modules
-      - /app/.next
     environment:
       KNOWLEDGE_BASE__MCP_URL: http://host.docker.internal:3002/mcp/sse
       QDRANT__URL: http://qdrant:6333
       EMBEDDING__PUBLIC_URL: http://host.docker.internal:3003/embed
-      WATCHPACK_POLLING: "true"
-      CHOKIDAR_USEPOLLING: "true"
     depends_on:
       qdrant:
         condition: service_healthy

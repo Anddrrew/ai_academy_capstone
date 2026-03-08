@@ -37,9 +37,13 @@ flowchart TB
             judge_llm[LLM: GPT-5.2]
             judge_qdrant[Qdrant Evaluation Client]
         end
+        subgraph skills["Specialized Skills"]
+            content_creation[Content Creation]
+        end
         chat_endpoint --> main_agent
         main_agent --> research_agent
         main_agent --> judge_agent
+        main_agent --> skills
   end
   subgraph kb["Knowledge Service"]
     kb_observer[File System Observer]

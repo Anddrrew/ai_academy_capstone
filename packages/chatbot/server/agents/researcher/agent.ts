@@ -7,7 +7,7 @@ import { createGithubMcpClient } from "@/server/mcp/github";
 import { getGithubMcpTools } from "./tools/github";
 
 const provider = createOpenAI({
-  apiKey: config.OPENAI_API_KEY,
+  apiKey: config.openAI.apiKey,
 });
 
 export async function runCodebaseResearchAgent(
@@ -29,7 +29,7 @@ export async function runCodebaseResearchAgent(
     );
 
     const agent = new ToolLoopAgent({
-      model: provider.responses(config.OPENAI_CODE_EXPLORER_MODEL),
+      model: provider.responses(config.openAI.codeExplorerModel),
       instructions: CODEBASE_RESEARCHER_SYSTEM_PROMPT,
       stopWhen: stepCountIs(25),
       tools: githubTools,
@@ -78,7 +78,7 @@ export async function runCodebaseResearchAgent(
         "[researcher] hit step limit without text — forcing summary",
       );
       const summaryResult = await generateText({
-        model: provider.responses(config.OPENAI_CODE_EXPLORER_MODEL),
+        model: provider.responses(config.openAI.codeExplorerModel),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         messages: (result as any).messages ?? [],
         system:

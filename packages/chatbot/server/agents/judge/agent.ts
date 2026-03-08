@@ -47,15 +47,22 @@ function extractOrderedTrace(message: UIMessage | undefined): string {
       blocks.push(`reasoning:\n${String(part.text).trim()}`);
     } else if (
       (part.type.startsWith("tool-") || part.type === "dynamic-tool") &&
+      "state" in part &&
       part.state === "output-available"
     ) {
       toolIndex++;
       const name =
         part.type === "dynamic-tool"
-          ? String(part.toolName ?? "unknown")
+          ? String((part as any).toolName ?? "unknown")
           : part.type.slice("tool-".length);
-      const inputJson = JSON.stringify(part.input, null, 2).slice(0, 2000);
-      const outputJson = JSON.stringify(part.output, null, 2).slice(0, 2000);
+      const inputJson = JSON.stringify((part as any).input, null, 2).slice(
+        0,
+        8000,
+      );
+      const outputJson = JSON.stringify((part as any).output, null, 2).slice(
+        0,
+        8000,
+      );
       blocks.push(
         [
           `tool call [${toolIndex}]: ${name}`,

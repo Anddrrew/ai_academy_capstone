@@ -100,19 +100,20 @@ export class MemoryStorage {
 
     const data = await this.qdrant.scroll(this.collectionName, {
       filter: this.userFilter(userId),
-      order_by: {
-        key: "createdAt",
-        direction: "desc",
-      },
       with_payload: true,
       limit: 100,
     });
 
-    return data.points.map((point) => ({
+    const records = data.points.map((point) => ({
       id: String(point.id),
       text: String(point.payload?.text ?? ""),
       createdAt: Number(point.payload?.createdAt ?? 0),
     }));
+
+    // Sort by createdAt descending in-memory (scroll doesn't support order_by)
+    records.sort((a, b) => b.createdAt - a.createdAt);
+
+    return records;
   }
 
   async delete(memoryId: string): Promise<void> {
