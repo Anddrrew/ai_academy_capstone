@@ -18,7 +18,7 @@ export class EmbedderService {
   }
 
   async embedQuery(text: string): Promise<number[]> {
-    const response = await fetch(config.EMBEDDER_URL, {
+    const response = await fetch(config.embedding.publicUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inputs: [text] }),

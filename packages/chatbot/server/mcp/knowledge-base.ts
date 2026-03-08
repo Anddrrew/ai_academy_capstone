@@ -5,7 +5,7 @@ export async function createKnowledgeBaseMcpClient() {
   return createMCPClient({
     transport: {
       type: "sse",
-      url: config.KNOWLEDGE_BASE_MCP_URL,
+      url: config.knowledgeBase.mcpUrl,
     },
   });
 }

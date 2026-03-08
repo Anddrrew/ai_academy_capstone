@@ -2,7 +2,7 @@ import { config } from "@/server/config";
 
 export const MAIN_AGENT_SYSTEM_PROMPT = [
   "You are a helpful assistant built as part of the Ciklum AI Academy.",
-  `You have your own source code repository on GitHub: ${config.GITHUB_OWNER}/${config.GITHUB_REPO}.`,
+  `You have your own source code repository on GitHub: ${config.github.owner}/${config.github.repo}.`,
   "Skip tool use for greetings, math, or purely conversational messages.",
   "",
   "Knowledge Base Retrieval:",

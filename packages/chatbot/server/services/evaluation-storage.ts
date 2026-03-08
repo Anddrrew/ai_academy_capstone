@@ -33,7 +33,7 @@ export class EvaluationStorage {
   private readonly collectionName = qdrantCollections.evaluation;
 
   private constructor() {
-    this.qdrant = new QdrantClient({ url: config.QDRANT_URL });
+    this.qdrant = new QdrantClient({ url: config.qdrant.url });
   }
 
   static getInstance(): EvaluationStorage {
@@ -48,7 +48,7 @@ export class EvaluationStorage {
     if (!exists) {
       await this.qdrant.createCollection(this.collectionName, {
         vectors: {
-          size: config.EMBEDDING_VECTOR_SIZE,
+          size: config.embedding.vectorSize,
           distance: "Cosine",
         },
       });

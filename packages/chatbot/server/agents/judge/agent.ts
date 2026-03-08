@@ -7,11 +7,11 @@ import { JUDGE_AGENT_SYSTEM_PROMPT } from "./prompt";
 import { evaluationFeedbackSchema } from "./schema";
 
 const provider = createOpenAI({
-  apiKey: config.OPENAI_API_KEY,
+  apiKey: config.openAI.apiKey,
 });
 
 const judgeAgent = new ToolLoopAgent({
-  model: provider.responses(config.OPENAI_JUDGE_MODEL),
+  model: provider.responses(config.openAI.judgeModel),
   instructions: JUDGE_AGENT_SYSTEM_PROMPT,
   output: Output.object({
     schema: evaluationFeedbackSchema,

@@ -30,12 +30,9 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      OPENAI_API_KEY: ${OPENAI__API_KEY}
-      KNOWLEDGE_BASE_MCP_URL: http://host.docker.internal:3002/mcp/sse
-      QDRANT_URL: http://qdrant:6333
-      EMBEDDER_URL: http://host.docker.internal:3003/embed
-      EMBEDDING_VECTOR_SIZE: ${EMBEDDING__VECTOR_SIZE}
-      GITHUB_TOKEN: ${GITHUB__TOKEN}
+      KNOWLEDGE_BASE__MCP_URL: http://host.docker.internal:3002/mcp/sse
+      QDRANT__URL: http://qdrant:6333
+      EMBEDDING__PUBLIC_URL: http://host.docker.internal:3003/embed
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     depends_on:

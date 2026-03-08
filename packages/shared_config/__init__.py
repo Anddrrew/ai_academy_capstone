@@ -9,10 +9,7 @@ print(f"Loading config from {ENV_CONFIG_FILE}")
 
 
 class QdrantConfig(BaseModel):
-    search_k: int = 10
-    host: str
-    port: int
-    collection: str
+    url: str
 
 
 class EmbeddingConfig(BaseModel):
@@ -23,7 +20,10 @@ class EmbeddingConfig(BaseModel):
 
 class KnowledgeBaseConfig(BaseModel):
     poll_interval: int = 10
-    public_url: str = "http://localhost:3002"
+    public_url: str
+    collection: str = "knowledge_base"
+    search_k: int = 10
+    threshold: float = 0.7
 
 
 class ChunkingConfig(BaseModel):
@@ -39,7 +39,7 @@ class WhisperConfig(BaseModel):
 class Config(BaseSettings):
     qdrant: QdrantConfig
     embedding: EmbeddingConfig
-    knowledge_base: KnowledgeBaseConfig = KnowledgeBaseConfig()
+    knowledge_base: KnowledgeBaseConfig
     chunking: ChunkingConfig = ChunkingConfig()
     whisper: WhisperConfig = WhisperConfig()
 

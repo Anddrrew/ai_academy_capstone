@@ -8,16 +8,16 @@ from qdrant_client.models import Distance, VectorParams
 from shared_config import config
 from services.chunker import Chunk
 
-DEFAULT_SEARCH_LIMIT = config.qdrant.search_k
-DEFAULT_MIN_SEARCH_SCORE = 0.7
 
 
 class KnowledgeStorage:
-    collection_name = config.qdrant.collection
+    collection_name = config.knowledge_base.collection
+    default_threshold = config.knowledge_base.threshold
+    default_search_k = config.knowledge_base.search_k
 
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
-        self._client = QdrantClient(host=config.qdrant.host, port=config.qdrant.port)
+        self._client = QdrantClient(url=config.qdrant.url)
         self._ensure_collection()
 
     def _ensure_collection(self) -> None:
@@ -57,14 +57,14 @@ class KnowledgeStorage:
     def search(
         self,
         vector: list[float],
-        k: int = DEFAULT_SEARCH_LIMIT,
-        min_score: float = DEFAULT_MIN_SEARCH_SCORE,
+        k: int = default_search_k,
+        score_threshold: float = default_threshold,
     ) -> list[ScoredPoint]:
         result = self._client.query_points(
             collection_name=self.collection_name,
             query=vector,
             limit=k,
-            score_threshold=min_score,
+            score_threshold=score_threshold,
         )
         return result.points
 

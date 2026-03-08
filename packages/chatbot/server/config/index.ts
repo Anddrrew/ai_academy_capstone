@@ -9,31 +9,52 @@ const GITHUB_OWNER = "Anddrrew";
 const GITHUB_REPO = "ai_academy_capstone";
 
 const configSchema = z.object({
-  QDRANT_URL: z.url(),
-  EMBEDDER_URL: z.url(),
-  KNOWLEDGE_BASE_MCP_URL: z.url(),
-  OPENAI_API_KEY: z.string().min(1),
-  OPENAI_CHAT_MODEL: z.string().min(1).default("gpt-5.2"),
-  OPENAI_CODE_EXPLORER_MODEL: z.string().min(1).default("gpt-5.3-codex"),
-  OPENAI_JUDGE_MODEL: z.string().min(1).default("gpt-5.2"),
+  qdrant: z.object({
+    url: z.url(),
+  }),
+  embedding: z.object({
+    publicUrl: z.url(),
+    vectorSize: z.coerce.number().int().positive().default(1024),
+  }),
+  openAI: z.object({
+    apiKey: z.string().min(1),
+    chatModel: z.string().min(1).default("gpt-5.2"),
+    codeExplorerModel: z.string().min(1).default("gpt-5.3-codex"),
+    judgeModel: z.string().min(1).default("gpt-5.2"),
+  }),
+  knowledgeBase: z.object({
+    publicUrl: z.url(),
+    mcpUrl: z.url(),
+  }),
+  github: z.object({
+    token: z.string().min(1),
+    owner: z.string().min(1).default(GITHUB_OWNER),
+    repo: z.string().min(1).default(GITHUB_REPO),
+  }),
+
   MEMORY_TOP_K: z.coerce.number().int().positive().default(5),
-  EMBEDDING_VECTOR_SIZE: z.coerce.number().int().positive().default(1024),
-  GITHUB_TOKEN: z.string().min(1),
-  GITHUB_OWNER: z.string().min(1).default(GITHUB_OWNER),
-  GITHUB_REPO: z.string().min(1).default(GITHUB_REPO),
 });
 
 export const config = configSchema.parse({
-  EMBEDDER_URL: process.env.EMBEDDER_URL,
-  EMBEDDING_VECTOR_SIZE: process.env.EMBEDDING_VECTOR_SIZE,
-  KNOWLEDGE_BASE_MCP_URL: process.env.KNOWLEDGE_BASE_MCP_URL,
+  qdrant: {
+    url: process.env.QDRANT__URL,
+  },
+  embedding: {
+    publicUrl: process.env.EMBEDDING__PUBLIC_URL,
+    vectorSize: process.env.EMBEDDING__VECTOR_SIZE,
+  },
   MEMORY_TOP_K: process.env.MEMORY_TOP_K,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  OPENAI_CHAT_MODEL: process.env.OPENAI_CHAT_MODEL,
-  OPENAI_CODE_EXPLORER_MODEL: process.env.OPENAI_CODE_EXPLORER_MODEL,
-  OPENAI_JUDGE_MODEL: process.env.OPENAI_JUDGE_MODEL,
-  QDRANT_URL: process.env.QDRANT_URL,
-  GITHUB_TOKEN: process.env.GITHUB_TOKEN,
-  GITHUB_OWNER,
-  GITHUB_REPO,
+  openAI: {
+    apiKey: process.env.OPENAI__API_KEY,
+    chatModel: process.env.OPENAI__CHAT_MODEL,
+    codeExplorerModel: process.env.OPENAI__CODE_EXPLORER_MODEL,
+    judgeModel: process.env.OPENAI__JUDGE_MODEL,
+  },
+  knowledgeBase: {
+    publicUrl: process.env.KNOWLEDGE_BASE__PUBLIC_URL,
+    mcpUrl: process.env.KNOWLEDGE_BASE__MCP_URL,
+  },
+  github: {
+    token: process.env.GITHUB__TOKEN,
+  },
 });

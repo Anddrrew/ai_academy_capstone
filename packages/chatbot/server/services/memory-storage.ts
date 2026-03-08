@@ -17,7 +17,7 @@ export class MemoryStorage {
   private readonly collectionName = qdrantCollections.memory;
 
   private constructor() {
-    this.qdrant = new QdrantClient({ url: config.QDRANT_URL });
+    this.qdrant = new QdrantClient({ url: config.qdrant.url });
   }
 
   static getInstance(): MemoryStorage {
@@ -32,7 +32,7 @@ export class MemoryStorage {
     if (!exists) {
       await this.qdrant.createCollection(this.collectionName, {
         vectors: {
-          size: config.EMBEDDING_VECTOR_SIZE,
+          size: config.embedding.vectorSize,
           distance: "Cosine",
         },
       });
@@ -76,7 +76,7 @@ export class MemoryStorage {
   async search(
     userId: string,
     query: string,
-    k = config.MEMORY_TOP_K,
+    k = 5,
   ): Promise<Array<{ id: string; text: string; score: number | null }>> {
     await this.ensureCollection();
     const vector = await embedderService.embedQuery(query);

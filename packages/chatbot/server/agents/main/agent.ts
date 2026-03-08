@@ -9,10 +9,10 @@ import { createMemoryTools } from "./tools/memory";
 import { researchCodebaseTool } from "./tools/research";
 
 const provider = createOpenAI({
-  apiKey: config.OPENAI_API_KEY,
+  apiKey: config.openAI.apiKey,
 });
 
-const model = provider.responses(config.OPENAI_CHAT_MODEL);
+const model = provider.responses(config.openAI.chatModel);
 
 export async function createMainAgent(userId: string) {
   console.log(`Creating main agent for user ${userId}`);

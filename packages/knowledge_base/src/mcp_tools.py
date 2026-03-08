@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from indexer.loaders import SUPPORTED_EXTENSIONS
 from services.embedder import embedder
 from services.file_manager import file_manager
-from services.knowledge_storage import DEFAULT_SEARCH_LIMIT, KnowledgeStorage
+from services.knowledge_storage import KnowledgeStorage
 from indexer.store import FileType, Priority, Status, store
 
 mcp_server = Server("knowledge_base")
@@ -45,7 +45,6 @@ class IndexingStatusResult(BaseModel):
 
 class SearchKnowledgeBaseArgs(BaseModel):
     query: str
-    k: int = DEFAULT_SEARCH_LIMIT
 
 
 class SearchKnowledgeBaseHit(BaseModel):
@@ -85,7 +84,8 @@ def _validate_public_url(file_url: str) -> str:
         raise ValueError("URL must include a hostname.")
 
     try:
-        addr_info = socket.getaddrinfo(parsed.hostname, parsed.port or 80, type=socket.SOCK_STREAM)
+        addr_info = socket.getaddrinfo(
+            parsed.hostname, parsed.port or 80, type=socket.SOCK_STREAM)
     except socket.gaierror as exc:
         raise ValueError(f"Unable to resolve URL hostname: {exc}") from exc
 
@@ -93,7 +93,8 @@ def _validate_public_url(file_url: str) -> str:
         sockaddr = info[4]
         ip = sockaddr[0]
         if _is_blocked_ip(ip):
-            raise ValueError("URL points to a blocked/private network address.")
+            raise ValueError(
+                "URL points to a blocked/private network address.")
 
     return file_url
 
@@ -109,7 +110,8 @@ def _download_url_file(file_url: str) -> bytes:
             timeout=DOWNLOAD_TIMEOUT_SECONDS,
         ) as response:
             if 300 <= response.status_code < 400 and response.headers.get("location"):
-                current_url = urljoin(current_url, response.headers["location"])
+                current_url = urljoin(
+                    current_url, response.headers["location"])
                 continue
 
             response.raise_for_status()
@@ -234,14 +236,15 @@ async def call_tool(
             failed=[r.path for r in failed],
         )
         return types.CallToolResult(
-            content=[types.TextContent(type="text", text=result.model_dump_json())],
+            content=[types.TextContent(
+                type="text", text=result.model_dump_json())],
             structuredContent=result.model_dump(),
         )
 
     elif name == "search_knowledge_base":
         args = SearchKnowledgeBaseArgs.model_validate(raw_args)
         vector = embedder.embed_query(args.query)
-        hits = knowledge_storage.search(vector, k=args.k)
+        hits = knowledge_storage.search(vector)
         result = SearchKnowledgeBaseResult(
             query=args.query,
             results=[
@@ -256,7 +259,8 @@ async def call_tool(
         )
 
         return types.CallToolResult(
-            content=[types.TextContent(type="text", text=result.model_dump_json())],
+            content=[types.TextContent(
+                type="text", text=result.model_dump_json())],
             structuredContent=result.model_dump(),
         )
 
