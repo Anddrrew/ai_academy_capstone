@@ -162,7 +162,7 @@ Please, upload https://arxiv.org/pdf/2409.14924 into your knowledge base with fi
 As this is a learning project, there are no proper file validation mechanisms, access control of reindexing existing files. Be careful with what you upload. In case of indexer issues
 
 See current indexing status via knowledge base API:
-http://localhost:3002/status
+GET http://localhost:3002/status
 
 Also, you can trigger reindexing of all files in the knowledge base via API:
-http://localhost:3002/reindex
+POST http://localhost:3002/reindex
