@@ -44,6 +44,9 @@ flowchart TB
         main_agent --> research_agent
         main_agent --> judge_agent
         main_agent --> skills
+        chat_embeddings[Embedder Client]
+        main_agent --> chat_embeddings
+        judge_agent --> chat_embeddings
   end
   subgraph kb["Knowledge Service"]
     kb_observer[File System Observer]
@@ -103,6 +106,7 @@ flowchart TB
   judge_qdrant --> qdrant_evaluation
   github_tools --> github_mcp
 
+  chat_embeddings --> embed_api
   kb_embed_client --> |chunks| embed_api
   kb_qdrant --> qdrant_knowledge
   kb_sqlite --> fs_state

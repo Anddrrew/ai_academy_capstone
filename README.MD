@@ -1,4 +1,4 @@
-# [IN PROGRESS] AI Academy Capstone Project: Agentic RAG Assistant
+# AI Academy Capstone Project: Agentic RAG Assistant
 
 ## Table of Contents
 
